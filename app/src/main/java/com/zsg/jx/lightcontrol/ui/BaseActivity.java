@@ -100,6 +100,7 @@ public class BaseActivity extends Activity implements View.OnClickListener {
 
     String getTopActivity() {
         ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+        //4.4 崩溃
         List<ActivityManager.RunningTaskInfo> runningTaskInfos = manager.getRunningTasks(1);
         if (runningTaskInfos != null) {
             return (runningTaskInfos.get(0).topActivity).toString();
