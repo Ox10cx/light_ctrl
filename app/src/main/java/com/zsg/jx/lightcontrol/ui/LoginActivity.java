@@ -161,7 +161,9 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
 
 
                         User user = new User(id, name, phone, sex, password, create_time, image_thumb, image, token);
-                        new UserDao(LoginActivity.this).insert(user);
+                        UserDao userDao=new UserDao(LoginActivity.this);
+                        userDao.deleteAll();
+                        userDao.insert(user);
                         showLongToast(getString(R.string.login_success));
                         PreferenceUtil preferenceUtil=MyApplication.getInstance().getPreferenceUtil();
                         preferenceUtil.setUid(user.getId());

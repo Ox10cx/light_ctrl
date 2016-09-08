@@ -81,6 +81,7 @@ public class FirstActivity extends BaseActivity {
 
     private void requestLogin() {
         RequestParams params = new RequestParams();
+        Log.d(TAG,"登录："+phone+" "+password);
         params.put(Config.PHONE, phone);
         params.put(Config.PASSWORD, password);
         RequestManager.post(Config.URL_LOGIN, this, params, requestListener());
@@ -121,7 +122,9 @@ public class FirstActivity extends BaseActivity {
                         }
 
                         User user = new User(id, name, phone, sex, password, create_time, image_thumb, image, token);
-                        new UserDao(FirstActivity.this).insert(user);
+                        UserDao userDao=new UserDao(FirstActivity.this);
+                        userDao.deleteAll();
+                        userDao.insert(user);
                         PreferenceUtil preferenceUtil = MyApplication.getInstance().getPreferenceUtil();
                         preferenceUtil.setUid(user.getId());
                         //*******************************

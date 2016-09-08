@@ -82,6 +82,7 @@ public class ThemeFragment extends Fragment implements AdapterView.OnItemClickLi
         //新建适配器
         String[] from = {"image", "text"};
         int[] to = {R.id.image, R.id.text};
+        Log.d(TAG,"xxxx测试");
         sim_adapter = new SimpleAdapter(
                 context, mapArrayList, R.layout.theme_list_item, from, to);
         //配置适配器

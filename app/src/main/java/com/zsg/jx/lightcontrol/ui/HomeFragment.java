@@ -65,6 +65,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
     private static final int LINK_DEVICE = 1;
     private static final int ADD_LIGHT = 2;
 
+    private static final int REQUEST_DEVICE_LIST = 5;
+
 
     private HomeActivity context;
     private Banner mbanner;      //图片轮播
@@ -169,6 +171,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
         btnWgMsg = (TextView) v.findViewById(R.id.btn_wgmsg);
 
         tvDeviceName = (TextView) v.findViewById(R.id.tv_wgname);
+        tvDeviceName.setOnClickListener(this);
         updateDevice();
     }
 
@@ -214,6 +217,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
             initAddDialog(getActivity());
         } else if (v.getId() == R.id.refresh_btn) {//刷新的按钮
             showRefreshAnimation();
+        } else if (v.getId() == R.id.tv_wgname) {    //网关列表
+            Intent intent = new Intent(context, DeviceListActivity.class);
+            intent.putExtra("devicelist", mListDevice);
+            startActivityForResult(intent, REQUEST_DEVICE_LIST);
         }
 
     }
@@ -284,6 +291,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
         }
     }
 
+
     private void initAddDialog(final Context context) {
         View view = LayoutInflater.from(context).inflate(R.layout.addnew_dialog, null);
         final Dialog dlg = new Dialog(context, R.style.common_dialog);
@@ -345,7 +353,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
                     public void run() {
                         context.closeLoadingDialog();
                     }
-                },12*1000);
+                }, 12 * 1000);
                 //获取wifi下的灯泡连接状态
                 MyApplication.getInstance().mService.getLightList(currentDevice.getAddress());
             }
@@ -399,6 +407,16 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
                     Log.d(TAG, "ADD_LIGHT>>>" + light_name + ">>" + addGroupIndex + "<<" + light_no);
                     //通知主活动更新设备列表
                     context.getLightInfo(light_name, addGroupIndex, light_no);
+                } else if (requestCode == REQUEST_DEVICE_LIST) {
+                    WifiDevice device = (WifiDevice) data.getSerializableExtra("select_device");
+                    currentDevice = device;
+                    context.currentDevice = device;
+                    if (currentDevice.getName().isEmpty()) {
+                        tvDeviceName.setText(getString(R.string.newwg1));
+                    } else
+                        tvDeviceName.setText(currentDevice.getName());
+
+                    requestLightList();
                 }
             }
         }
@@ -511,5 +529,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
             refresh_view.clearAnimation();
         }
     }
+
 
 }

@@ -22,7 +22,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity android:name=".MainActivity" />
-        <activity android:name=".ui.SplashActivity"></activity>
+        <activity android:name=".ui.SplashActivity" />
         <activity android:name=".ui.HomeActivity" />
         <activity android:name=".ui.FirstActivity">
             <intent-filter>
@@ -50,10 +50,13 @@
             android:enabled="true"
             android:exported="true" />
 
-        <activity android:name=".ui.ControlLightActivity"></activity>
-        <activity android:name=".ui.AddScenActivity"/>
-        <activity android:name=".ui.AddScenLightActivity"/>
-        <activity android:name=".ui.AddLightActivity"/>
+        <activity android:name=".ui.ControlLightActivity" />
+        <activity android:name=".ui.AddScenActivity" />
+        <activity android:name=".ui.AddScenLightActivity" />
+        <activity android:name=".ui.AddLightActivity" />
+        <activity
+            android:name=".ui.DeviceListActivity"
+            android:theme="@style/Theme.AppCompat.Light.Dialog"></activity>
     </application>
 
 </manifest>

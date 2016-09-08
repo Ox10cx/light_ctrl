@@ -744,7 +744,7 @@ public class WifiConnectService extends Service {
     protected boolean doSend(String pack) {
         Socket socket = mSocketMap.get(IMEI);
         if (socket == null) {
-            Log.e("hjq", "no socket for server");
+            Log.e("testhjq", "no socket for server");
             return false;
         }
 

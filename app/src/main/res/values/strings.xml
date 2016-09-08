@@ -368,7 +368,7 @@
     <string name="forbid">禁止</string>
     <string name="allow">允许</string>
     <string name="nogetwg">无可用网关</string>
-    <string name="newwg1">新网关1</string>
+    <string name="newwg1">新网关</string>
     <string name="reconnect">连接异常，重新建立连接</string>
-
+    <string name="wifidevice_not_online">该wifi设备不在线</string>
 </resources>

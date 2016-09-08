@@ -230,7 +230,7 @@ public class HomeActivity extends BaseActivity {
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    updateWifiDeviceStatus(imei);
+                    //updateWifiDeviceStatus(imei);
                 }
             });
         }
@@ -699,7 +699,7 @@ public class HomeActivity extends BaseActivity {
 
     @Override
     protected void onDestroy() {
-        if (mConnection != null) {
+        if (mConnection != null && MyApplication.getInstance().mService != null) {
             try {
                 MyApplication.getInstance().mService.unregisterCallback(mCallback);
             } catch (RemoteException e) {
