@@ -602,4 +602,8 @@ public class ControlLightActivity extends BaseActivity implements View.OnClickLi
             e.printStackTrace();
         }
     }
+
+    public void doBack(View v){
+        finish();
+    }
 }

@@ -8,6 +8,8 @@ import java.io.Serializable;
 public class WifiDevice implements Serializable {
    // private String name;
     private String thumbnail;       //缩略图
+    public byte[] list;     //保存灯泡状态
+
 
     public WifiDevice copy() {
 

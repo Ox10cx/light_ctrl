@@ -66,6 +66,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
     private static final int ADD_LIGHT = 2;
 
     private static final int REQUEST_DEVICE_LIST = 5;
+    private static final int REQUEST_DEVICE = 6;
 
 
     private HomeActivity context;
@@ -88,9 +89,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
     private ArrayList<WifiDevice> mListDevice;
     public WifiDevice currentDevice;       //当前显示的wifi设备
     //只有都得到了 状态和列表 才显示
-    private boolean isGetLightStatus = false;       //是否得到了各个灯的状态   （长连接得到）
-    private boolean isGetLightList = false;         //是否得到了各个灯的列表    （web得到）
-    private byte[] lightStatuList;      //各个灯的状态
+    //private boolean isGetLightStatus = false;       //是否得到了各个灯的状态   （长连接得到）
+    //private boolean isGetLightList = false;         //是否得到了各个灯的列表    （web得到）
+    //private byte[] lightStatuList;      //各个灯的状态
     private HashMap<Integer, Integer> lightIndex = new HashMap<>();     //储存所有灯的列表
     private String result = "";
 
@@ -169,10 +170,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
         btnAddWifi.setOnClickListener(this);
 
         btnWgMsg = (TextView) v.findViewById(R.id.btn_wgmsg);
+        btnWgMsg.setOnClickListener(this);
 
         tvDeviceName = (TextView) v.findViewById(R.id.tv_wgname);
         tvDeviceName.setOnClickListener(this);
-        updateDevice();
     }
 
     private void initFragment() {
@@ -212,6 +213,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
 
     @Override
     public void onClick(View v) {
+        Log.d(TAG,"点击");
         if (v.getId() == R.id.btn_addwifi) {
             //添加wifi设备
             initAddDialog(getActivity());
@@ -221,29 +223,58 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
             Intent intent = new Intent(context, DeviceListActivity.class);
             intent.putExtra("devicelist", mListDevice);
             startActivityForResult(intent, REQUEST_DEVICE_LIST);
+        } else if (v.getId() == R.id.btn_wgmsg) {
+            showAboutWifiDevice();
+
         }
 
     }
 
+    /**
+     * 显示网关详情
+     */
+    private void showAboutWifiDevice() {
+        if (currentDevice == null || currentDevice.getStatus() != WifiDevice.LOGIN_STATUS)
+            context.showShortToast(getString(R.string.nogetwg));
+        else {
+            Intent intent = new Intent(context, GateWayActivity.class);
+            intent.putExtra("device", currentDevice);
+            intent.putExtra("groups", allDeviceFragment.getDatas());
+            startActivityForResult(intent, REQUEST_DEVICE);
+        }
+    }
 
-    public void updateDevice() {
+
+    public void update(ArrayList<WifiDevice> devices, WifiDevice tempDevice) {
+        mListDevice.clear();
+        mListDevice.addAll(devices);
+
         if (tvDeviceName == null || mListDevice == null)
             return;
         btnWgMsg.setText("网关 x " + mListDevice.size());
 
+
         //当前有可用网关时
-        if (currentDevice != null) {
-            //先判断该网关是否在线
-            for (WifiDevice device : mListDevice) {
-                if (device.getAddress().equals(currentDevice.getAddress())) {
-                    if (device.getStatus() == WifiDevice.LOGIN_STATUS) {
-                        //当前设备还处于在线状态 则不做处理
-                        return;
-                    }
-                    break;
+        if (currentDevice != null && tempDevice != null) {
+
+            if (tempDevice.getStatus() == WifiDevice.LOGIN_STATUS) {
+                if (tempDevice.getAddress().equals(currentDevice.getAddress())) {
+                    //当前设备还处于在线状态 则web请求列表
+                    currentDevice = tempDevice;
+                    context.currentDevice = currentDevice;
+                    requestHttpLightList();
+
+                }
+                return;
+            } else {
+                if (!tempDevice.getAddress().equals(currentDevice.getAddress())) {
+                    return;
                 }
             }
+
+
         }
+
         //当前无可用网关时
         currentDevice = null;
         for (int i = 0; i < mListDevice.size(); i++) {
@@ -261,34 +292,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
             tvDeviceName.setText(currentDevice.getName());
 
         lightIndex.clear();
-        isGetLightStatus = false;       //是否得到了各个灯的状态   （长连接得到）
-        isGetLightList = false;
-
         context.currentDevice = currentDevice;
-
-    }
-
-
-    public void update(ArrayList<WifiDevice> devices) {
-        mListDevice.clear();
-        mListDevice.addAll(devices);
-        updateDevice();
-    }
-
-    /**
-     * 更新wifi设备的状态
-     *
-     * @param imei
-     * @param status
-     */
-    public void setDeviceStatus(String imei, int status) {
-        for (int i = 0; i < mListDevice.size(); i++) {
-            WifiDevice d = mListDevice.get(i);
-            if (d.getAddress().equals(imei)) {
-                d.setStatus(status);
-                return;
-            }
-        }
+        requestHttpLightList();
     }
 
 
@@ -331,36 +336,13 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
         //window.setAttributes(params);
     }
 
-    /**
-     * 获取灯泡列表
-     */
-    public void requestLightList() {
-        lightIndex.clear();
-        isGetLightStatus = false;       //是否得到了各个灯的状态   （长连接得到）
-        isGetLightList = false;
 
+    public void requestHttpLightList() {
+        lightIndex.clear();
         if (currentDevice == null) {
             hideRefreshAnimation();
             return;
         }
-
-        try {
-
-            if (MyApplication.getInstance().mService != null) {
-                context.showLoadingDialog("获取灯泡列表...", false);
-                new Handler().postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        context.closeLoadingDialog();
-                    }
-                }, 12 * 1000);
-                //获取wifi下的灯泡连接状态
-                MyApplication.getInstance().mService.getLightList(currentDevice.getAddress());
-            }
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
-
 
         //得到该设备在web服务器上的的灯泡列表
         RequestParams params = new RequestParams();
@@ -369,11 +351,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
             @Override
             public void requestSuccess(String json) {
                 Log.d(TAG, json);
-                isGetLightStatus = true;
                 result = json;
-                if (isGetLightList && isGetLightStatus) {
-                    setListData(result);
-                }
+                setListData(result);
+
             }
 
             @Override
@@ -384,8 +364,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
                 }
             }
         });
-
-
     }
 
     @Override
@@ -408,7 +386,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
                     //通知主活动更新设备列表
                     context.getLightInfo(light_name, addGroupIndex, light_no);
                 } else if (requestCode == REQUEST_DEVICE_LIST) {
-                    WifiDevice device = (WifiDevice) data.getSerializableExtra("select_device");
+                    //切换wifi设备
+                    WifiDevice device = (WifiDevice) data .getSerializableExtra("select_device");
                     currentDevice = device;
                     context.currentDevice = device;
                     if (currentDevice.getName().isEmpty()) {
@@ -416,21 +395,26 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
                     } else
                         tvDeviceName.setText(currentDevice.getName());
 
-                    requestLightList();
+                    requestHttpLightList();
+                } else if (requestCode == REQUEST_DEVICE) {
+                    WifiDevice device = (WifiDevice) data.getSerializableExtra("device");
+                    if (currentDevice.getAddress().equals(device.getAddress())) {
+
+                        for(WifiDevice wifidevice:context.mListDevice){
+                            if(wifidevice.getAddress().equals(currentDevice.getAddress())){
+                                context.mListDevice.remove(wifidevice);
+                                break;
+                            }
+                        }
+                        currentDevice = null;
+                        context.currentDevice = null;
+                        update(context.mListDevice,null);
+                    }
                 }
             }
         }
         super.onActivityResult(requestCode, resultCode, data);
 
-    }
-
-
-    public void updateLightStatus(byte[] list) {
-        isGetLightList = true;
-        lightStatuList = list;
-        if (isGetLightList && isGetLightStatus) {
-            setListData(result);
-        }
     }
 
 
@@ -445,6 +429,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
         //isGetLightStatus = false;
         //isGetLightList = false;
         Log.d(TAG, "setListData，更新数据");
+        if (currentDevice == null)
+            return;
         if (result != null && (result.trim()).length() != 0) {
             try {
                 JSONObject json = new JSONObject(result);
@@ -453,31 +439,35 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
                 } else {
                     JSONArray lightsList = json.getJSONArray("lights");
                     LinkedList<Light> temlist = new LinkedList<>();
+
+                    byte lightStatuList[] = currentDevice.list;
                     int index = 1;
                     String name = "";
-                    Lg.i(TAG, "lightStatuList.length-->>" + lightStatuList.length);
-                    for (int i = 0; i < lightsList.length(); i++) {
-                        JSONObject ob = lightsList.getJSONObject(i);
-                        if (ob.has("index")) {
-                            index = ob.getInt("index");
-                        }
-                        if (ob.has("name")) {
-                            name = ob.getString("name");
-                        } else {
-                            name = "unkown";
-                        }
-                        Light light = new Light();
-                        light.setId("" + index);
-                        Lg.i(TAG, "light_index-->>" + index + "   lightStatuList.length:" + lightStatuList.length);
-                        if (index <= lightStatuList.length) {
-                            light.setLightStatu(lightStatuList[index - 1]);
-                            light.setName(name);
-                        }
-                        //在线或者离线状态
-                        if (light.getLightStatu() != 0) {
-                            lightIndex.put(index, temlist.size());
-                            Lg.i(TAG, "lightIndex.put(index, temlist.size()->>" + index + "  " + temlist.size());
-                            temlist.add(light);
+                    if (lightStatuList != null) {
+                        Lg.i(TAG, "lightStatuList.length-->>" + lightStatuList.length);
+                        for (int i = 0; i < lightsList.length(); i++) {
+                            JSONObject ob = lightsList.getJSONObject(i);
+                            if (ob.has("index")) {
+                                index = ob.getInt("index");
+                            }
+                            if (ob.has("name")) {
+                                name = ob.getString("name");
+                            } else {
+                                name = "unkown";
+                            }
+                            Light light = new Light();
+                            light.setId("" + index);
+                            Lg.i(TAG, "light_index-->>" + index + "   lightStatuList.length:" + lightStatuList.length);
+                            if (index <= lightStatuList.length) {
+                                light.setLightStatu(lightStatuList[index - 1]);
+                                light.setName(name);
+                            }
+                            //在线或者离线状态
+                            if (light.getLightStatu() != 0) {
+                                lightIndex.put(index, temlist.size());
+                                Lg.i(TAG, "lightIndex.put(index, temlist.size()->>" + index + "  " + temlist.size());
+                                temlist.add(light);
+                            }
                         }
                     }
                     //childList.add(temlist);

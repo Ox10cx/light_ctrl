@@ -1,11 +1,13 @@
 package com.zsg.jx.lightcontrol.model;
 
+import java.io.Serializable;
+
 /**
  * 设备类型分组信息
  * 照明 开关  传感器
  * Created by zsg on 2016/8/15.
  */
-public class DeviceGroup {
+public class DeviceGroup implements Serializable{
     public static final  int LIGHT_TYPE=1;      //照明
     public static final  int SWITCH_TYPE=2;     //开关
     public static final  int SENSOR_TYPE=3;     //传感器

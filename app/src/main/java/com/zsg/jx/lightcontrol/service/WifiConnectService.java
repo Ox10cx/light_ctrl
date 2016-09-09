@@ -13,12 +13,14 @@ import android.util.Log;
 import com.zsg.jx.lightcontrol.ICallback;
 import com.zsg.jx.lightcontrol.IService;
 import com.zsg.jx.lightcontrol.app.MyApplication;
+import com.zsg.jx.lightcontrol.model.ServerMsg;
 import com.zsg.jx.lightcontrol.util.Lg;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -32,8 +34,8 @@ public class WifiConnectService extends Service {
     private Handler myHandler;
     //private static final String HOST = "112.74.23.39";
     private static final String HOST = "120.25.100.110";
-    private static final int PORT = 9899;
-    //private static final int PORT = 7777;
+    //private static final int PORT = 9899;
+    private static final int PORT = 7777;
 
     private static final String CLIENT = "QC";
     private static final String SEP = "@";
@@ -83,9 +85,13 @@ public class WifiConnectService extends Service {
 
     // 命令发送队列  发送命令收到该命令响应后即为发送成功
     // 发送成功或发送超时（一定时间服务端未响应）  则移除收个命令 发送下条命令
-    List<String> mCmdList = new LinkedList<String>();
+    //List<String> mCmdList = new LinkedList<String>();
+    // 命令发送队列
+    List<ServerMsg> mCmdList = new ArrayList<>();
     final Object mLock = new Object();
     final int mInterval = 10;       // 15s 内响应命令
+
+    public final static long MS_POLL_INTERVAL = 3000; // 3S
 
     private RemoteCallbackList<ICallback> mCallbacks = new RemoteCallbackList<ICallback>();
     private HandlerThread mHandlerThread;
@@ -109,7 +115,7 @@ public class WifiConnectService extends Service {
     /* cmd, imei
      * 将命令字符串解析 得到cmd  和 imei
       * */
-    protected String[] getCommand(String s) {
+    public static String[] getCommand(String s) {
         Pattern p = Pattern.compile(CLIENT + SEP + "(\\d+)" + SEP + "([A-Za-z0-9]+)" + SEP + IMEI_PATTERN + SEP + "([0-9A-Fa-f]+)\\$");
         Matcher m = p.matcher(s);
 
@@ -131,7 +137,7 @@ public class WifiConnectService extends Service {
         synchronized (mCallbacks) {
             //开始回调  得到注册的数量
             int n = mCallbacks.beginBroadcast();
-            Log.e(TAG,"callback数量："+n);
+            Log.e(TAG, "callback数量：" + n);
             try {
                 int i;
                 for (i = 0; i < n; i++) {
@@ -384,19 +390,25 @@ public class WifiConnectService extends Service {
     *
     * 判断是否只相对应的命令 如果是 则移除命令队列、解同步锁、移除超时、发送下一条指令
      */
-    void doWithCmdList(String[] cmdPack, String cmd, String imei) {
-        if (cmdPack != null && cmdPack[0].equals(cmd) && cmdPack[1].equals(imei)) {
-            mHandler.removeCallbacks(mTimeoutProc);
-            synchronized (mLock) {
-                mCmdList.remove(0);
-                sendNextPack();
+    void doWithCmdList(String cmd, String imei) {
+
+        //mHandler.removeCallbacks(mTimeoutProc);
+        synchronized (mLock) {
+            for (int i = 0; i < mCmdList.size(); i++) {
+                ServerMsg msg = mCmdList.get(i);
+                if (msg.getCmd().equals(cmd) && msg.getImei().equals(imei)) {
+                    mCmdList.remove(i);
+                    i--;
+                }
             }
+
         }
+
     }
 
     /**
      * 解析返回结果
-     * <p/>
+     * <p>
      * CLIENT + SEP(@) + CMD + SEP + TOKEN + SEP + IMEI +SEP + value + '$'
      *
      * @param s
@@ -405,13 +417,13 @@ public class WifiConnectService extends Service {
 
         Pattern p = Pattern.compile(CLIENT + SEP + "(\\d+)" + SEP + "([A-Za-z0-9]+)" + SEP + IMEI_PATTERN + SEP + "([0-9A-Fa-f]+)\\$");
         Matcher m = p.matcher(s);
-        String[] cmdPack = null;
+        //String[] cmdPack = null;
 
         synchronized (mLock) {
             if (mCmdList.size() > 0) {
                 //得到发送命令
-                String str = mCmdList.get(0);
-                cmdPack = getCommand(str);
+                //String str = mCmdList.get(0);
+                //cmdPack = getCommand(str);
             }
         }
 
@@ -431,7 +443,7 @@ public class WifiConnectService extends Service {
                 //登录响应
                 Lg.i(TAG, "get login rsp cmd");
                 //判断发送的指令和该响应是否一致 并做出下一步处理
-                doWithCmdList(cmdPack, LOGIN_CMD, imei);
+                doWithCmdList( LOGIN_CMD, imei);
 
                 //回调 所有注册了的回调
                 synchronized (mCallbacks) {
@@ -472,7 +484,7 @@ public class WifiConnectService extends Service {
 
             if (SWITCH_RSP.equals(cmd)) {
                 Lg.i(TAG, "Get switch rsp here: token =" + token + ", imei = " + imei + ", ret = " + value);
-                doWithCmdList(cmdPack, SWITCH_CMD, imei);
+                doWithCmdList( SWITCH_CMD, imei);
                 synchronized (mCallbacks) {
                     int n = mCallbacks.beginBroadcast();
                     try {
@@ -499,7 +511,7 @@ public class WifiConnectService extends Service {
                 //ping命令回调
 
                 Lg.i(TAG, "Get ping rsp here: token =" + token + ", imei = " + imei + ", ret = " + value);
-                doWithCmdList(cmdPack, PING_CMD, imei);
+                doWithCmdList( PING_CMD, imei);
 
                 synchronized (mCallbacks) {
                     int n = mCallbacks.beginBroadcast();
@@ -519,7 +531,7 @@ public class WifiConnectService extends Service {
 
             if (GET_STATUS_RSP.equals(cmd)) {
                 Lg.i(TAG, "Get status rsp here: token =" + token + ", imei = " + imei + ", ret = " + value);
-                doWithCmdList(cmdPack, GET_STATUS_CMD, imei);
+                doWithCmdList( GET_STATUS_CMD, imei);
                 synchronized (mCallbacks) {
                     int n = mCallbacks.beginBroadcast();
                     try {
@@ -538,7 +550,7 @@ public class WifiConnectService extends Service {
 
             if (GET_LIGHT_LIST_RSP.equals(cmd)) {
                 Lg.i(TAG, "Get light list rsp here: token =" + token + ", imei = " + imei + ", ret = " + value);
-                doWithCmdList(cmdPack, GET_LIGHT_LIST_CMD, imei);
+                doWithCmdList( GET_LIGHT_LIST_CMD, imei);
 //                int[] lightArray = getLightIntArray(value);
                 byte[] lightArray = getLightByteArrayPro(value);
                 synchronized (mCallbacks) {
@@ -560,7 +572,7 @@ public class WifiConnectService extends Service {
             if (GET_BRIGHT_CHROME_RSP.equals(cmd)) {
                 //得到
                 Lg.i("hjq", "Get bright and chrome rsp here: token =" + token + ", imei = " + imei + ", ret = " + value);
-                doWithCmdList(cmdPack, GET_BRIGHT_CHROME_CMD, imei);
+                doWithCmdList( GET_BRIGHT_CHROME_CMD, imei);
                 int[] retArray = getRetValue(value);
                 synchronized (mCallbacks) {
                     int n = mCallbacks.beginBroadcast();
@@ -579,7 +591,7 @@ public class WifiConnectService extends Service {
 
             if (SET_BRIGHT_CHROME_RSP.equals(cmd)) {
                 Lg.i("hjq", "Set bright and chrome rsp here: token =" + token + ", imei = " + imei + ", ret = " + value);
-                doWithCmdList(cmdPack, SET_BRIGHT_CHROME_CMD, imei);
+                doWithCmdList(SET_BRIGHT_CHROME_CMD, imei);
                 synchronized (mCallbacks) {
                     int n = mCallbacks.beginBroadcast();
                     Lg.i("hjq", "n->>>" + n);
@@ -598,7 +610,7 @@ public class WifiConnectService extends Service {
 
             if (PAIR_LIGHT_RSP.equals(cmd)) {
                 Lg.i(TAG, "pair light device rsp here: token =" + token + ", imei = " + imei + ", ret = " + value);
-                doWithCmdList(cmdPack, PAIR_LIGHT_CMD, imei);
+                doWithCmdList( PAIR_LIGHT_CMD, imei);
                 synchronized (mCallbacks) {
                     int n = mCallbacks.beginBroadcast();
                     try {
@@ -706,7 +718,7 @@ public class WifiConnectService extends Service {
         });
     }
 
-    void sendNextPack() {
+ /*   void sendNextPack() {
         if (mCmdList.size() > 0) {
             final String pack = mCmdList.get(0);
             if (pack != null) {
@@ -718,9 +730,9 @@ public class WifiConnectService extends Service {
                 });
             }
         }
-    }
+    }*/
 
-    Runnable mTimeoutProc = new Runnable() {
+  /*  Runnable mTimeoutProc = new Runnable() {
         @Override
         public void run() {
             String s;
@@ -739,7 +751,7 @@ public class WifiConnectService extends Service {
                 sendCmdTimeout(cmds);
             }
         }
-    };
+    };*/
 
     protected boolean doSend(String pack) {
         Socket socket = mSocketMap.get(IMEI);
@@ -750,8 +762,11 @@ public class WifiConnectService extends Service {
 
         Log.e("hjq", "cmd string = " + pack);
         OutputStream os = null;
-        mHandler.postDelayed(mTimeoutProc, mInterval * 1000);
+        ServerMsg msg = new ServerMsg(pack);
+        mCmdList.add(msg);
 
+        //mHandler.postDelayed(mTimeoutProc, mInterval * 1000);
+        startPollTimer();
         try {
             os = socket.getOutputStream();
             byte[] strbyte = pack.getBytes("UTF-8");
@@ -770,6 +785,53 @@ public class WifiConnectService extends Service {
         }
 
         return true;
+    }
+
+    void startPollTimer() {
+        myHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                checkCmdTimeout(mCmdList);  //检查是否超时
+
+                if (!mCmdList.isEmpty()) {
+                    myHandler.postDelayed(this, MS_POLL_INTERVAL);
+                }
+            }
+        }, MS_POLL_INTERVAL);
+    }
+
+    void checkCmdTimeout(List<ServerMsg> list) {
+        ServerMsg msg;
+        boolean timeout = false;
+
+        synchronized (mLock) {
+            if (list.isEmpty()) {
+                return;
+            }
+            msg = list.get(0);
+            if (msg.isTimeout()) {
+                Log.e("testhjq", "msg: " + msg + "is timeout");
+                timeout = true;
+                list.remove(0);
+            }
+        }
+        if (!timeout) {
+            return;
+        }
+
+        String[] array = getCommand(msg.getPack());
+        synchronized (mCallbacks) {
+            int n = mCallbacks.beginBroadcast();
+            try {
+                int i;
+                for (i = 0; i < n; i++) {
+                    mCallbacks.getBroadcastItem(i).onCmdTimeout(array[0], array[1]);
+                }
+            } catch (RemoteException e) {
+                Log.e(TAG, "remote call exception", e);
+            }
+            mCallbacks.finishBroadcast();
+        }
     }
 
     boolean sendCmdDirect(String cmd, String imei, String value) {
@@ -823,8 +885,8 @@ public class WifiConnectService extends Service {
             sb.append(OFF);
         }
         sb.append(END);
-
-        synchronized (mLock) {
+        pack=sb.toString();
+       /* synchronized (mLock) {
             mCmdList.add(sb.toString());
             if (mCmdList.size() == 1) {
                 pack = mCmdList.get(0);
@@ -832,7 +894,7 @@ public class WifiConnectService extends Service {
                 Log.e("testhjq", "wait for cmd '" + mCmdList.get(0) + "' response");
                 return true;
             }
-        }
+        }*/
         return doSend(pack);
     }
 
@@ -1014,26 +1076,26 @@ public class WifiConnectService extends Service {
 
         @Override
         public void pairLight(final String address, int index) throws RemoteException {
-                if (index < 0 || index > 255) {
-                    Log.e("hjq", "index parameter error " + index);
-                    return;
-                }
-                StringBuffer sb = new StringBuffer();
-                sb.append(bin2hex((byte) index));
-                final String s = sb.toString();
-
-                myHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        sendCmd(PAIR_LIGHT_CMD, address, s);
-                    }
-                });
+            if (index < 0 || index > 255) {
+                Log.e("hjq", "index parameter error " + index);
+                return;
             }
+            StringBuffer sb = new StringBuffer();
+            sb.append(bin2hex((byte) index));
+            final String s = sb.toString();
+
+            myHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    sendCmd(PAIR_LIGHT_CMD, address, s);
+                }
+            });
+        }
 
         //清空消息队列
         @Override
         public void clearCmdList() {
-            mHandler.removeCallbacks(mTimeoutProc);
+            //mHandler.removeCallbacks(mTimeoutProc);
             mCmdList.clear();
         }
 
@@ -1050,7 +1112,6 @@ public class WifiConnectService extends Service {
             }
         }
     };
-
 
 
 }

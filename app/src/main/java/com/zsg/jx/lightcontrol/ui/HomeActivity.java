@@ -61,7 +61,7 @@ public class HomeActivity extends BaseActivity {
     private TextView connectbtn;
     private Handler mHandler = new Handler();
 
-    private ArrayList<WifiDevice> mListDevice;
+    public ArrayList<WifiDevice> mListDevice;
 
     //存放灯泡状态
     public LinkedList<Light> lightList = new LinkedList<>();
@@ -161,7 +161,9 @@ public class HomeActivity extends BaseActivity {
                                   if (getTopActivity() != null) {
                                       if (getTopActivity().contains("HomeActivity")) {
                                           //pingWifiDevice();
-                                          homeFragment.requestLightList();
+                                          // homeFragment.requestLightList();
+                                          //通过获取灯泡列表 来获取设备状态 有返回则在线  超时离线
+                                          getWifiDeviceStatus();
                                       }
                                   }
                               }
@@ -254,19 +256,7 @@ public class HomeActivity extends BaseActivity {
         @Override
         public void onCmdTimeout(String cmd, final String imei) throws RemoteException {
             Lg.i(TAG, "onCmdTimeout");
-            //如果是ping命令超时 则更新该wifi设备状态 为注销状态
-            if (cmd.equals(WifiConnectService.PING_CMD)) {
-                mHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        homeFragment.setDeviceStatus(imei, WifiDevice.LOGOUT_STATUS);
-                        //通知web服务器更改设备状态
-                        updateWifiDeviceLoginStatus(imei, WifiDevice.LOGOUT_STATUS);
-                    }
-                });
 
-                return;
-            }
 
             if (cmd.equals(WifiConnectService.PAIR_LIGHT_CMD)) {
                 mHandler.post(new Runnable() {
@@ -284,28 +274,22 @@ public class HomeActivity extends BaseActivity {
             if (cmd.equals(WifiConnectService.GET_LIGHT_LIST_CMD) && getTopActivity() != null) {
                 Lg.i(TAG, "灯泡列表请求失败");
                 if (getTopActivity().contains("HomeActivity")) {
-                    Lg.i(TAG, "灯泡列表请求:requestCount:" + requestCount);
                     //重新请求
                     mHandler.post(new Runnable() {
                         @Override
                         public void run() {
-                            requestCount++;
-                            if (requestCount > 0) {
-                                closeLoadingDialog();
-                                showShortToast(getString(R.string.getlightlist_fail));
-                                return;
-                            }
-
-
-                            WifiDevice device = homeFragment.currentDevice;
-                            try {
-                                if (MyApplication.getInstance().mService != null && device != null) {
-                                    //获取wifi下的灯泡列表
-                                    MyApplication.getInstance().mService.getLightList(device.getAddress());
+                            //更新设备状态
+                            for (WifiDevice device : mListDevice) {
+                                if (device.getAddress().equals(imei)) {
+                                    device.setStatus(WifiDevice.LOGOUT_STATUS);
+                                    device.list = null;
+                                    homeFragment.update(mListDevice, device);
+                                    break;
                                 }
-                            } catch (RemoteException e) {
-                                e.printStackTrace();
                             }
+
+                            showShortToast(getString(R.string.getlightlist_fail));
+
                         }
                     });
 
@@ -316,32 +300,34 @@ public class HomeActivity extends BaseActivity {
 
         @Override
         public void onPingRsp(final String imei, final int ret) throws RemoteException {
-            //收到ping命令返回
 
-            mHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    //更新设备状态
-                    setDeviceStatus(imei, WifiDevice.LOGIN_STATUS);
-                    homeFragment.setDeviceStatus(imei, WifiDevice.LOGIN_STATUS);
-                }
-            });
         }
 
         @Override
-        public void onGetLightList(String imei, final byte[] list) throws RemoteException {
-            Log.e(TAG, "onGetLightList:" + list);
+        public void onGetLightList(final String imei, final byte[] list) throws RemoteException {
+            Log.e(TAG, "onGetLightList:" + list+" "+imei);
             requestCount = 0;
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    if (list != null) {
-                        closeLoadingDialog();
-                        homeFragment.updateLightStatus(list);
-                    } else {
-                        closeLoadingDialog();
-                        showShortToast(getString(R.string.device_link_no_light));
-                    }
+                //    if (list != null) {
+                 //       closeLoadingDialog();
+
+                        //更新设备状态
+                        for (WifiDevice device : mListDevice) {
+                            if (device.getAddress().equals(imei)) {
+                                device.setStatus(WifiDevice.LOGIN_STATUS);
+                                device.list = list;
+                                homeFragment.update(mListDevice, device);
+                                break;
+                            }
+                        }
+
+
+                //    } else {
+               //         closeLoadingDialog();
+                 //       showShortToast(getString(R.string.device_link_no_light));
+                //    }
                 }
             });
         }
@@ -394,6 +380,24 @@ public class HomeActivity extends BaseActivity {
             );
         }
     };
+
+    /**
+     * 通过获取灯泡列表 来获取设备状态 有返回则在线  超时离线
+     */
+    private void getWifiDeviceStatus() {
+        for (WifiDevice device : mListDevice) {
+            if (MyApplication.getInstance().longConnected &&
+                    MyApplication.getInstance().mService != null) {
+                //获取wifi下的灯泡连接状态
+                try {
+                    MyApplication.getInstance().mService.getLightList(device.getAddress());
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }
+    }
 
     public void connectLongSocket() {
         Log.d(TAG, "长连接中");
@@ -463,7 +467,7 @@ public class HomeActivity extends BaseActivity {
                                 mListDevice.add(d);
                             }
 
-                            homeFragment.update(mListDevice);
+                            //homeFragment.update(mListDevice);
                             //只有收到服务器发来的设备列表才进行  绑定服务
                             //绑定wifiConnectService
                             if (MyApplication.getInstance().mService == null) {
@@ -472,7 +476,8 @@ public class HomeActivity extends BaseActivity {
                                 getApplicationContext().bindService(i, mConnection, BIND_AUTO_CREATE);
                             } else {
                                 if (MyApplication.getInstance().longConnected) {
-                                    homeFragment.requestLightList();
+                                    //homeFragment.requestLightList();
+                                    getWifiDeviceStatus();
                                 } else {
                                     connectLongSocket();
                                 }
@@ -575,127 +580,9 @@ public class HomeActivity extends BaseActivity {
     }
 
 
-    /**
-     * 更新wifi设备的状态
-     *
-     * @param imei
-     * @param status
-     */
-    public void setDeviceStatus(String imei, int status) {
-        for (int i = 0; i < mListDevice.size(); i++) {
-            WifiDevice d = mListDevice.get(i);
-            if (d.getAddress().equals(imei)) {
-                d.setStatus(status);
-                return;
-            }
-        }
-    }
-
-    /**
-     * 更新已经登录的 wifi设备的状态
-     */
-    void pingWifiDevice() {
-        int i;
-        for (i = 0; i < mListDevice.size(); i++) {
-            WifiDevice d = mListDevice.get(i);
-            if (d.getStatus() == WifiDevice.LOGIN_STATUS) {
-                try {
-                    //为每个设备发送ping命令  更新各个设备状态
-                    MyApplication.getInstance().mService.ping(d.getAddress(), 1);
-                } catch (RemoteException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
-    void updateWifiDeviceLoginStatus(final String imei, final int status) {
-        RequestParams params = new RequestParams();
-        params.put("imei", imei);
-        params.put("status", Integer.toString(status));
-        RequestManager.post(Config.URL_UPDATEWIFILOGINSTATUS, HomeActivity.this, params, new RequestListener() {
-            @Override
-            public void requestSuccess(String result) {
-                Log.d(TAG, result);
-                try {
-                    JSONObject json = new JSONObject(result);
-                    if (!"ok".equals(JsonUtil.getStr(json, Config.STATUS))) {
-                        BaseTools.showToastByLanguage(HomeActivity.this, json);
-                    } else {
-                        BaseTools.showToastByLanguage(HomeActivity.this, json);
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-
-            }
-
-            @Override
-            public void requestError(VolleyError e) {
-                showComReminderDialog();
-            }
-        });
-
-    }
-
-    void updateWifiDeviceStatus(final String imei) {
-        RequestParams params = new RequestParams();
-        params.put("imei", imei);
-        RequestManager.post(Config.URL_GETWIFIDEVICE, HomeActivity.this, params, new RequestListener() {
-            @Override
-            public void requestSuccess(String result) {
-                //Log.d(TAG,result);
-                JSONObject json;
-                try {
-                    json = new JSONObject(result);
-                    if (!"ok".equals(JsonUtil.getStr(json, Config.STATUS))) {
-                        BaseTools.showToastByLanguage(HomeActivity.this, json);
-                    } else {
-                        JSONObject ob = json.getJSONObject("wifi");
-                        int i;
-                        String imei = ob.getString("imei");
-                        WifiDevice d = null;
-                        for (i = 0; i < mListDevice.size(); i++) {
-                            if (imei.equals(mListDevice.get(i).getAddress())) {
-                                d = mListDevice.get(i);
-                                break;
-                            }
-                        }
-
-                        if (d != null) {
-                            String name;
-                            int status = WifiDevice.INACTIVE_STATUS;
-                            if (ob.has("name")) {
-                                name = ob.getString("name");
-                            } else {
-                                name = "unkown";
-                            }
-
-                            if (ob.has("status")) {
-                                //得到设备当前状态
-                                status = ob.getInt("status");
-                            }
-
-                            d.setName(name);
-                            d.setStatus(status);
-                            mListDevice.set(i, d);
-                            homeFragment.update(mListDevice);
-                        }
-                    }
-
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            @Override
-            public void requestError(VolleyError e) {
-                showComReminderDialog();
-            }
-        });
 
 
-    }
+
 
     @Override
     protected void onDestroy() {
@@ -758,9 +645,11 @@ public class HomeActivity extends BaseActivity {
                     } else {
                         showLongToast(getResources().getString(R.string.add_light_ok));
                         //更新列表
-                        homeFragment.requestLightList();
+                        MyApplication.getInstance().mService.getLightList(imei);
                     }
                 } catch (JSONException e) {
+                    e.printStackTrace();
+                } catch (RemoteException e) {
                     e.printStackTrace();
                 }
 
@@ -790,9 +679,11 @@ public class HomeActivity extends BaseActivity {
                     } else {
                         showLongToast(getResources().getString(R.string.add_light_ok));
                         //更新列表
-                        homeFragment.requestLightList();
+                        MyApplication.getInstance().mService.getLightList(imei);
                     }
                 } catch (JSONException e) {
+                    e.printStackTrace();
+                } catch (RemoteException e) {
                     e.printStackTrace();
                 }
 

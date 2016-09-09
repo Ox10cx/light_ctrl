@@ -23,7 +23,13 @@
             android:layout_centerVertical="true"
             android:layout_centerHorizontal="true" />
 
-
+        <ImageView
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_centerVertical="true"
+            android:src="@drawable/btn_return"
+            android:layout_marginLeft="10dp"
+            android:onClick="doBack"/>
     </RelativeLayout>
     <View
         android:layout_width="match_parent"

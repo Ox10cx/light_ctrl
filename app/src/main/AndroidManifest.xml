@@ -54,6 +54,7 @@
         <activity android:name=".ui.AddScenActivity" />
         <activity android:name=".ui.AddScenLightActivity" />
         <activity android:name=".ui.AddLightActivity" />
+        <activity android:name=".ui.GateWayActivity" />
         <activity
             android:name=".ui.DeviceListActivity"
             android:theme="@style/Theme.AppCompat.Light.Dialog"></activity>

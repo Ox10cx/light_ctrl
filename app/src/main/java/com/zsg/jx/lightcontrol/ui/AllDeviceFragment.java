@@ -31,7 +31,7 @@ public class AllDeviceFragment extends Fragment implements AdapterView.OnItemCli
     private Context context;
     private ListView mlistView;
     private AllDeviceAdapter adapter;
-    private ArrayList<DeviceGroup> datas;
+    public ArrayList<DeviceGroup> datas;
     private HomeFragment homeFragment;
 
     public AllDeviceFragment(Context context, HomeFragment fragment) {
@@ -43,6 +43,9 @@ public class AllDeviceFragment extends Fragment implements AdapterView.OnItemCli
 
     }
 
+    public ArrayList<DeviceGroup> getDatas(){
+        return datas;
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
