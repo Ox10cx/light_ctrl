@@ -2,8 +2,8 @@
     <string name="app_name">LightControl</string>
 
     <!-- system -->
-    <string name="system_name">智能wifi</string>
-    <string name="app_versionName" translatable="false">1.4.8</string>
+    <string name="system_name">智能灯控</string>
+    <string name="app_versionName" translatable="false">1.1</string>
     <string name="system_image_back">返回</string>
     <string name="system_image_logo">Logo</string>
     <string name="system_image_setting">设置</string>
@@ -370,6 +370,7 @@
     <string name="nogetwg">无可用网关</string>
     <string name="newwg1">新网关</string>
     <string name="reconnect">连接异常，重新建立连接</string>
+    <string name="connect_fail">连接服务器失败...</string>
     <string name="wifidevice_not_online">该wifi设备不在线</string>
 
     <string name="planet_prompt">无网关设备</string>
