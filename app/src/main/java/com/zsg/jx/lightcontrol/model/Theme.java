@@ -1,9 +1,11 @@
 package com.zsg.jx.lightcontrol.model;
 
+import java.io.Serializable;
+
 /**
  * Created by zsg on 2016/8/24.
  */
-public class Theme {
+public class Theme implements Serializable{
     public int themeId;
     public String theme_name;
     public LightList list;

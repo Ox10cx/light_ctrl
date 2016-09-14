@@ -5,12 +5,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.zsg.jx.lightcontrol.R;
-import com.zsg.jx.lightcontrol.model.DeviceArea;
-import com.zsg.jx.lightcontrol.model.DeviceGroup;
+import com.zsg.jx.lightcontrol.model.Area;
+import com.zsg.jx.lightcontrol.ui.AreaDeviceFragment;
 
 import java.util.ArrayList;
 
@@ -18,23 +17,22 @@ import java.util.ArrayList;
  * Created by zsg on 2016/8/15.
  */
 public class AreaDeviceAdapter extends BaseAdapter {
-    private ArrayList<DeviceArea> datas;
+    private ArrayList<Area> datas;
     private Context context;
     private LayoutInflater inflater;
+    private AreaDeviceFragment.OnAreaClickListener listener;
 
-    public AreaDeviceAdapter(Context context) {
+    public AreaDeviceAdapter(Context context, AreaDeviceFragment.OnAreaClickListener listener) {
         this.context = context;
         inflater = LayoutInflater.from(context);
         datas = new ArrayList<>();
+        this.listener = listener;
     }
 
 
-    public void updateData(ArrayList<DeviceArea> newdata) {
+    public void updateData(ArrayList<Area> newdata) {
         datas.clear();
         datas.addAll(newdata);
-        //添加自定义视图项  名字为空
-        DeviceArea deviceArea=new DeviceArea("");
-        datas.add(deviceArea);
         notifyDataSetChanged();
     }
 
@@ -59,7 +57,7 @@ public class AreaDeviceAdapter extends BaseAdapter {
 
         if (convertView == null) {
             holderView = new ViewHolder();
-            convertView = LayoutInflater.from(context).inflate(
+            convertView = inflater.inflate(
                     R.layout.devicearea_item, null);
             holderView.name1 = (TextView) convertView.findViewById(R.id.tv_areaname1);
             holderView.name2 = (TextView) convertView.findViewById(R.id.tv_areaname2);
@@ -69,27 +67,41 @@ public class AreaDeviceAdapter extends BaseAdapter {
         }
 
         //判断是否是最后一个
-        if(position==datas.size()-1){
+        if (position == datas.size() - 1) {
             holderView.name1.setText("");
             holderView.name1.setBackground(context.getResources().getDrawable(R.drawable.defines_icon2));
             holderView.name2.setText("自定义");
             return convertView;
         }
 
-        DeviceArea group = datas.get(position);
+        Area area = datas.get(position);
 
-        if (group.getName().length() > 2)
-            holderView.name1.setText(group.getName().substring(0, 2));
+        if (area.getArea_name().length() > 2)
+            holderView.name1.setText(area.getArea_name().substring(0, 2));
         else
-            holderView.name1.setText(group.getName());
-        holderView.name2.setText(group.getName());
+            holderView.name1.setText(area.getArea_name());
+        holderView.name2.setText(area.getArea_name());
+        holderView.name1.setOnClickListener(holderView);
+        holderView.position = position;
 
+        if (area.isOpen)
+            holderView.name1.setBackgroundResource(R.drawable.circle_1);
+        else
+            holderView.name1.setBackgroundResource(R.drawable.circle_2);
         return convertView;
     }
 
-    private final static class ViewHolder {
+    private class ViewHolder implements View.OnClickListener {
         public TextView name1;
         public TextView name2;
+        public int position;
+
+
+        @Override
+        public void onClick(View v) {
+            listener.onAreaClick(position);
+
+        }
     }
 }
 

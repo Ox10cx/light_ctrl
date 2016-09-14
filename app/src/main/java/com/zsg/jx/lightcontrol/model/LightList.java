@@ -10,4 +10,12 @@ import java.util.LinkedList;
  */
 public class LightList implements Serializable {
    public LinkedList<Light> list;
+
+   public LightList(){
+      list=new LinkedList<>();
+   }
+
+   public int getSize(){
+      return list.size();
+   }
 }

@@ -21,12 +21,12 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-
         android:theme="@style/AppTheme">
         <activity android:name=".MainActivity" />
         <activity android:name=".ui.SplashActivity" />
-        <activity android:name=".ui.HomeActivity"
-            android:screenOrientation="portrait"/>
+        <activity
+            android:name=".ui.HomeActivity"
+            android:screenOrientation="portrait" />
         <activity android:name=".ui.FirstActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -37,10 +37,12 @@
         <activity android:name=".ui.LoginActivity" />
         <activity android:name=".ui.RegisterActivity" />
         <activity android:name=".ui.DetailRegActivity" />
-        <activity android:name=".ui.PersonInfoActivity"
-            android:screenOrientation="portrait"/>
-        <activity android:name=".ui.WifiConnectionActivity"
-            android:screenOrientation="portrait"/>
+        <activity
+            android:name=".ui.PersonInfoActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".ui.WifiConnectionActivity"
+            android:screenOrientation="portrait" />
         <activity android:name=".ui.SpecialFunctionActivity" />
         <activity android:name=".ui.FunctionIntroduceActivity" />
         <activity android:name=".ui.HelpFadeCallbackActivity" />
@@ -55,19 +57,27 @@
             android:enabled="true"
             android:exported="true" />
 
-        <activity android:name=".ui.ControlLightActivity"
-            android:screenOrientation="portrait"/>
-        <activity android:name=".ui.AddScenActivity"
-            android:screenOrientation="portrait"/>
-        <activity android:name=".ui.AddScenLightActivity"
-            android:screenOrientation="portrait"/>
-        <activity android:name=".ui.AddLightActivity"
-            android:screenOrientation="portrait"/>
-        <activity android:name=".ui.GateWayActivity"
-            android:screenOrientation="portrait"/>
+        <activity
+            android:name=".ui.ControlLightActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".ui.AddScenActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".ui.AddScenLightActivity"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".ui.AddLightActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".ui.GateWayActivity"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".ui.DeviceListActivity"
-            android:theme="@style/Theme.AppCompat.Light.Dialog"></activity>
+            android:theme="@style/Theme.AppCompat.Light.Dialog" />
+
+        <activity android:name=".ui.AddAreaActivity"></activity>
     </application>
 
 </manifest>

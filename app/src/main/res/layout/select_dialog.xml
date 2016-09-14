@@ -23,4 +23,14 @@
         android:text="重命名"
         android:textColor="@android:color/black"
         android:textSize="20sp" />
+
+    <TextView
+        android:id="@+id/delete_btn"
+        android:layout_width="match_parent"
+        android:layout_height="55dp"
+        android:gravity="center_vertical"
+        android:paddingLeft="15dp"
+        android:text="删除"
+        android:textColor="@android:color/black"
+        android:textSize="20sp" />
 </LinearLayout>
