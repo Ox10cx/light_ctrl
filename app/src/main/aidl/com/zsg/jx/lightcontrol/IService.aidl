@@ -32,4 +32,11 @@ interface IService {
     void pairLight(String address, int index);
 
     void clearCmdList();
+
+    //获得设备的局域网地址
+    void getDeviceIp(String address);
+
+    //点对点直接连接设备
+    void connectP2P(String imei,String ip,int port);
+
 }

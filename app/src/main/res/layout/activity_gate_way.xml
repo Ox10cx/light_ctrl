@@ -25,11 +25,11 @@
             android:textSize="18sp" />
 
         <ImageView
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
             android:layout_centerVertical="true"
             android:src="@drawable/btn_return"
-            android:layout_marginLeft="10dp"
+            android:layout_marginLeft="15dp"
             android:onClick="doBack"/>
 
     </RelativeLayout>

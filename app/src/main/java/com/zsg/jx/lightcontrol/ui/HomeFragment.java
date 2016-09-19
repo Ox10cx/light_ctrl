@@ -12,6 +12,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.app.Fragment;
 import android.os.Handler;
+import android.os.RemoteException;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -29,6 +30,7 @@ import com.android.volley.VolleyError;
 import com.youth.banner.Banner;
 import com.youth.banner.BannerConfig;
 import com.zsg.jx.lightcontrol.R;
+import com.zsg.jx.lightcontrol.app.MyApplication;
 import com.zsg.jx.lightcontrol.model.Light;
 import com.zsg.jx.lightcontrol.model.WifiDevice;
 import com.zsg.jx.lightcontrol.util.Config;
@@ -285,6 +287,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
 
         lightIndex.clear();
         context.currentDevice = currentDevice;
+
+
         requestHttpLightList();
     }
 
@@ -366,10 +370,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
                 if (requestCode == LINK_DEVICE) {
                     Bundle b = data.getExtras();
                     int changed = b.getInt("ret", 0);
-                   // if (changed == 1) {
-                        //通知主活动向web服务器请求更新设备列表
-                        context.requestWifiList();
-                   // }
+                    // if (changed == 1) {
+                    //通知主活动向web服务器请求更新设备列表
+                    context.requestWifiList();
+                    // }
                 } else if (requestCode == ADD_LIGHT) {
                     String light_name = data.getStringExtra("light_name");
                     int addGroupIndex = data.getIntExtra("group_index", 0);
@@ -379,7 +383,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
                     context.getLightInfo(light_name, addGroupIndex, light_no);
                 } else if (requestCode == REQUEST_DEVICE_LIST) {
                     //切换wifi设备
-                    WifiDevice device = (WifiDevice) data .getSerializableExtra("select_device");
+                    WifiDevice device = (WifiDevice) data.getSerializableExtra("select_device");
                     currentDevice = device;
                     context.currentDevice = device;
                     if (currentDevice.getName().isEmpty()) {
@@ -392,15 +396,15 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
                     WifiDevice device = (WifiDevice) data.getSerializableExtra("device");
                     if (currentDevice.getAddress().equals(device.getAddress())) {
 
-                        for(WifiDevice wifidevice:context.mListDevice){
-                            if(wifidevice.getAddress().equals(currentDevice.getAddress())){
+                        for (WifiDevice wifidevice : context.mListDevice) {
+                            if (wifidevice.getAddress().equals(currentDevice.getAddress())) {
                                 context.mListDevice.remove(wifidevice);
                                 break;
                             }
                         }
                         currentDevice = null;
                         context.currentDevice = null;
-                        update(context.mListDevice,null);
+                        update(context.mListDevice, null);
                     }
                 }
             }

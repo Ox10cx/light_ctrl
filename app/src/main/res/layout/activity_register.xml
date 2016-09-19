@@ -34,7 +34,6 @@
         <EditText
             android:layout_marginRight="16dp"
             android:layout_marginLeft="16dp"
-            android:drawableRight="@drawable/ic_clear_24dp"
             android:inputType="number"
             android:hint="@string/mobilephone"
             android:id="@+id/et_phone"

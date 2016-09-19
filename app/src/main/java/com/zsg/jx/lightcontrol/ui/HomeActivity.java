@@ -123,7 +123,7 @@ public class HomeActivity extends BaseActivity {
 
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            L.i(TAG,"onServiceConnected");
+            L.i(TAG, "onServiceConnected");
             MyApplication.getInstance().mService = IService.Stub.asInterface(service);
             L.i(TAG, "MyApplication.getInstance().mService:" + MyApplication.getInstance().mService);
             try {
@@ -148,12 +148,19 @@ public class HomeActivity extends BaseActivity {
         public void onConnect(String address) throws RemoteException {
             //只有收到服务端发来的登录响应 才认为是连接成功
             L.i(TAG, "onConnect");
-            linkServerCount=0;
+            linkServerCount = 0;
             MyApplication.getInstance().longConnected = true;
             mHandler.post(new Runnable() {
                               @Override
                               public void run() {
-                                  connectbtn.setText(R.string.has_connect);
+                                  if (currentDevice != null) {
+                                      boolean b = MyApplication.getInstance().p2pConnectedMap.containsKey(currentDevice.getAddress());
+                                      if (b)
+                                          connectbtn.setText("局域网连接");
+                                      else
+                                          connectbtn.setText("广域网连接");
+                                  } else
+                                      connectbtn.setText("广域网连接");
                                   closeLoadingDialog();
                                   closeComReminderDialog();
 //                  Toast.makeText(DeviceListActivity.this, R.string.str_connect_success, Toast.LENGTH_SHORT).show();
@@ -180,7 +187,16 @@ public class HomeActivity extends BaseActivity {
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    connectbtn.setText(R.string.no_connect);
+                    if (currentDevice != null) {
+                        boolean b = MyApplication.getInstance().p2pConnectedMap.containsKey(currentDevice.getAddress());
+                        if (b)
+                            connectbtn.setText("局域网连接");
+                        else
+                            connectbtn.setText("未连接");
+                    } else
+                        connectbtn.setText("未连接");
+
+
                     closeLoadingDialog();
 //                    showShortToast(getString(R.string.str_disconnected));
                     if (MyApplication.getInstance().isSocketConnectBreak) {
@@ -196,8 +212,8 @@ public class HomeActivity extends BaseActivity {
                                 } catch (RemoteException e) {
                                     e.printStackTrace();
                                 }
-                            }else{
-                                linkServerCount=0;
+                            } else {
+                                linkServerCount = 0;
                                 showLongToast(getString(R.string.connect_fail));
                             }
                         } else {  //没有网络
@@ -314,28 +330,33 @@ public class HomeActivity extends BaseActivity {
             L.e(TAG, "onGetLightList:" + list + " " + imei);
             requestCount = 0;
             mHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    //    if (list != null) {
-                    //       closeLoadingDialog();
+                              @Override
+                              public void run() {
 
-                    //更新设备状态
-                    for (WifiDevice device : mListDevice) {
-                        if (device.getAddress().equals(imei)) {
-                            device.setStatus(WifiDevice.LOGIN_STATUS);
-                            device.list = list;
-                            homeFragment.update(mListDevice, device);
-                            break;
-                        }
-                    }
+                                  //更新设备状态
+                                  for (WifiDevice device : mListDevice) {
+                                      if (device.getAddress().equals(imei)) {
+                                          device.setStatus(WifiDevice.LOGIN_STATUS);
+                                          device.list = list;
+                                          if (!MyApplication.getInstance().p2pConnectedMap.containsKey(imei)) {
+                                              if (getTopActivity() != null && getTopActivity().contains("HomeActivity")) {
+                                                  try {
+                                                      MyApplication.getInstance().mService.getDeviceIp(imei);
+                                                  } catch (RemoteException e) {
+                                                      e.printStackTrace();
+                                                  }
+                                              }
+                                          }
+                                          homeFragment.update(mListDevice, device);
+                                          break;
+                                      }
+                                  }
 
 
-                    //    } else {
-                    //         closeLoadingDialog();
-                    //       showShortToast(getString(R.string.device_link_no_light));
-                    //    }
-                }
-            });
+                              }
+                          }
+
+            );
         }
 
         @Override
@@ -384,6 +405,36 @@ public class HomeActivity extends BaseActivity {
                               }
                           }
             );
+        }
+
+        @Override
+        public void onGetDeviceIpRsp(String imei, String ip, int port) throws RemoteException {
+            //收到设备局域网地址 尝试进行连接
+            //if (currentDevice.getAddress().equals(imei)) {
+            MyApplication.getInstance().mService.connectP2P(imei, ip, port);
+            //}
+        }
+
+        @Override
+        public void onConnectP2P(String address) throws RemoteException {
+            L.e(TAG,"onConnectP2P success:"+address);
+            //p2p连接成功
+            if (currentDevice.getAddress().equals(address)) {
+                connectbtn.setText("局域网连接");
+            }
+            MyApplication.getInstance().p2pConnectedMap.put(address, true);
+        }
+
+        @Override
+        public void onDisconnectP2P(String address) throws RemoteException {
+            L.e(TAG,"onDisconnectP2P :"+address);
+            MyApplication.getInstance().p2pConnectedMap.remove(address);
+            if (currentDevice.getAddress().equals(address)) {
+                if (MyApplication.getInstance().longConnected)
+                    connectbtn.setText("广域网连接");
+                else
+                    connectbtn.setText("未连接");
+            }
         }
     };
 

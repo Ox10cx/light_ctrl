@@ -421,6 +421,21 @@ public class ControlLightActivity extends BaseActivity implements View.OnClickLi
         public void onPairLightRsp(final String imei, int ret) throws RemoteException {
 
         }
+
+        @Override
+        public void onGetDeviceIpRsp(String imei, String ip,int port) throws RemoteException {
+
+        }
+
+        @Override
+        public void onConnectP2P(String imei) throws RemoteException {
+
+        }
+
+        @Override
+        public void onDisconnectP2P(String address) throws RemoteException {
+
+        }
     };
 
 

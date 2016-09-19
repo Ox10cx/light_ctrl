@@ -68,6 +68,9 @@ public class WifiConnectService extends Service {
     public static final String PAIR_LIGHT_CMD = "030";
     public static final String PAIR_LIGHT_RSP = "031";
 
+    public static final String GET_IP_PORT_CMD = "034";
+    public static final String GET_IP_PORT_RSP = "035";
+
     private static final String ON = "1";
     private static final String OFF = "0";
 
@@ -80,6 +83,7 @@ public class WifiConnectService extends Service {
     private String mToken = null;
 
     Map<String, Socket> mSocketMap = new HashMap<String, Socket>();
+    Map<String, Socket> mP2PSocketMap = new HashMap<String, Socket>();
 
     Handler mHandler = new Handler();
 
@@ -90,6 +94,7 @@ public class WifiConnectService extends Service {
     List<ServerMsg> mCmdList = new ArrayList<>();
     final Object mLock = new Object();
     final int mInterval = 10;       // 15s 内响应命令
+
 
     public final static long MS_POLL_INTERVAL = 3000; // 3S
 
@@ -405,7 +410,7 @@ public class WifiConnectService extends Service {
 
     /**
      * 解析返回结果
-     * <p>
+     * <p/>
      * CLIENT + SEP(@) + CMD + SEP + TOKEN + SEP + IMEI +SEP + value + '$'
      *
      * @param s
@@ -433,7 +438,7 @@ public class WifiConnectService extends Service {
                 //登录响应
                 L.e(TAG, "get login rsp cmd");
                 //判断发送的指令和该响应是否一致 并做出下一步处理
-                doWithCmdList( LOGIN_CMD, imei);
+                doWithCmdList(LOGIN_CMD, imei);
 
                 //回调 所有注册了的回调
                 synchronized (mCallbacks) {
@@ -474,7 +479,7 @@ public class WifiConnectService extends Service {
 
             if (SWITCH_RSP.equals(cmd)) {
                 L.e(TAG, "Get switch rsp here: token =" + token + ", imei = " + imei + ", ret = " + value);
-                doWithCmdList( SWITCH_CMD, imei);
+                doWithCmdList(SWITCH_CMD, imei);
                 synchronized (mCallbacks) {
                     int n = mCallbacks.beginBroadcast();
                     try {
@@ -501,7 +506,7 @@ public class WifiConnectService extends Service {
                 //ping命令回调
 
                 L.e(TAG, "Get ping rsp here: token =" + token + ", imei = " + imei + ", ret = " + value);
-                doWithCmdList( PING_CMD, imei);
+                doWithCmdList(PING_CMD, imei);
 
                 synchronized (mCallbacks) {
                     int n = mCallbacks.beginBroadcast();
@@ -521,7 +526,7 @@ public class WifiConnectService extends Service {
 
             if (GET_STATUS_RSP.equals(cmd)) {
                 L.e(TAG, "Get status rsp here: token =" + token + ", imei = " + imei + ", ret = " + value);
-                doWithCmdList( GET_STATUS_CMD, imei);
+                doWithCmdList(GET_STATUS_CMD, imei);
                 synchronized (mCallbacks) {
                     int n = mCallbacks.beginBroadcast();
                     try {
@@ -540,7 +545,7 @@ public class WifiConnectService extends Service {
 
             if (GET_LIGHT_LIST_RSP.equals(cmd)) {
                 L.e(TAG, "Get light list rsp here: token =" + token + ", imei = " + imei + ", ret = " + value);
-                doWithCmdList( GET_LIGHT_LIST_CMD, imei);
+                doWithCmdList(GET_LIGHT_LIST_CMD, imei);
 //                int[] lightArray = getLightIntArray(value);
                 byte[] lightArray = getLightByteArrayPro(value);
                 synchronized (mCallbacks) {
@@ -562,7 +567,7 @@ public class WifiConnectService extends Service {
             if (GET_BRIGHT_CHROME_RSP.equals(cmd)) {
                 //得到
                 L.e(TAG, "Get bright and chrome rsp here: token =" + token + ", imei = " + imei + ", ret = " + value);
-                doWithCmdList( GET_BRIGHT_CHROME_CMD, imei);
+                doWithCmdList(GET_BRIGHT_CHROME_CMD, imei);
                 int[] retArray = getRetValue(value);
                 synchronized (mCallbacks) {
                     int n = mCallbacks.beginBroadcast();
@@ -600,7 +605,7 @@ public class WifiConnectService extends Service {
 
             if (PAIR_LIGHT_RSP.equals(cmd)) {
                 L.i(TAG, "pair light device rsp here: token =" + token + ", imei = " + imei + ", ret = " + value);
-                doWithCmdList( PAIR_LIGHT_CMD, imei);
+                doWithCmdList(PAIR_LIGHT_CMD, imei);
                 synchronized (mCallbacks) {
                     int n = mCallbacks.beginBroadcast();
                     try {
@@ -615,8 +620,37 @@ public class WifiConnectService extends Service {
                     mCallbacks.finishBroadcast();
                 }
             }
+
+            if (GET_IP_PORT_RSP.equals(cmd)) {
+                L.i(TAG, "get ip:port rsp here: token =" + token + ", imei = " + imei + ", ret = " + value);
+                doWithCmdList(GET_IP_PORT_CMD, imei);
+                String ip = parseValuetoIp(value);
+                int port = parseValuetoPort(value);
+                synchronized (mCallbacks) {
+                    int n = mCallbacks.beginBroadcast();
+                    try {
+                        int i;
+                        for (i = 0; i < n; i++) {
+                            mCallbacks.getBroadcastItem(i).onGetDeviceIpRsp(imei, ip, port);
+                        }
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "remote call exception", e);
+                    }
+                    mCallbacks.finishBroadcast();
+                }
+            }
+
         }
     }
+
+    private int parseValuetoPort(String value) {
+        return 0;
+    }
+
+    private String parseValuetoIp(String value) {
+        return null;
+    }
+
 
     /**
      * 连接service服务
@@ -628,7 +662,6 @@ public class WifiConnectService extends Service {
         InputStream in = null;
 
         Socket socket = mSocketMap.get(IMEI);
-
         try {
             if (socket == null) {
                 //建立长连接
@@ -689,6 +722,89 @@ public class WifiConnectService extends Service {
                 }
                 mCallbacks.finishBroadcast();
             }
+
+        }
+    }
+
+    /**
+     * 连接device  p2p
+     *
+     * @param ip
+     */
+    void connectDevice(String imei, String ip, int port) {
+        L.i(TAG, "connectDeviceP2P");
+        InputStream in = null;
+
+        Socket socket = mP2PSocketMap.get(imei);
+        try {
+            //建立长连接
+
+            if (socket == null) {
+                //建立长连接
+                socket = new Socket(ip, port);
+                mP2PSocketMap.put(imei, socket);
+            }
+
+
+            synchronized (mCallbacks) {
+                int n = mCallbacks.beginBroadcast();
+                try {
+                    int i;
+                    for (i = 0; i < n; i++) {
+                        mCallbacks.getBroadcastItem(i).onConnectP2P(imei);
+                    }
+                } catch (RemoteException re) {
+                    Log.e(TAG, "remote call exception", re);
+                }
+                mCallbacks.finishBroadcast();
+            }
+
+
+            //获取设备端返回结果
+            in = socket.getInputStream();
+            byte[] b = new byte[1024];
+            int len;
+
+            while ((len = in.read(b)) != -1) {
+                String line = new String(b, 0, len);
+                L.e(TAG, "line = " + line);
+                parseResponse(line);
+            }
+        } catch (Exception e) {
+            L.e(TAG, "连接断开");
+            e.printStackTrace();
+        } finally {
+            if (in != null) {
+                try {
+                    L.e(TAG, "关闭通道");
+                    in.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            if (socket != null) {
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                mP2PSocketMap.remove(imei);
+            }
+
+            synchronized (mCallbacks) {
+                int n = mCallbacks.beginBroadcast();
+                try {
+                    int i;
+                    for (i = 0; i < n; i++) {
+                        mCallbacks.getBroadcastItem(i).onDisconnectP2P(imei);
+                    }
+                } catch (RemoteException re) {
+                    Log.e(TAG, "remote call exception", re);
+                }
+                mCallbacks.finishBroadcast();
+            }
         }
     }
 
@@ -743,8 +859,7 @@ public class WifiConnectService extends Service {
         }
     };*/
 
-    protected boolean doSend(String pack) {
-        Socket socket = mSocketMap.get(IMEI);
+    protected boolean doSend(String pack,Socket socket) {
         if (socket == null) {
             L.e(TAG, "no socket for server");
             return false;
@@ -845,7 +960,7 @@ public class WifiConnectService extends Service {
         sb.append(END);
         pack = sb.toString();
 
-        return doSend(pack);
+        return doSend(pack,mSocketMap.get(IMEI));
     }
 
     /**
@@ -875,8 +990,13 @@ public class WifiConnectService extends Service {
             sb.append(OFF);
         }
         sb.append(END);
-        pack=sb.toString();
-        return doSend(pack);
+        pack = sb.toString();
+        Socket socket=null;
+        if(mP2PSocketMap.containsKey(imei))
+            socket=mP2PSocketMap.get(imei);
+        else
+            socket=mSocketMap.get(IMEI);
+        return doSend(pack,socket);
     }
 
     @Override
@@ -1043,7 +1163,7 @@ public class WifiConnectService extends Service {
                 L.e(TAG, "index parameter error " + index);
                 return;
             }
-            L.i(TAG,"getBrightChrome");
+            L.i(TAG, "getBrightChrome");
             StringBuffer sb = new StringBuffer();
             sb.append(bin2hex((byte) index));
             final String s = sb.toString();
@@ -1079,6 +1199,29 @@ public class WifiConnectService extends Service {
         public void clearCmdList() {
             //mHandler.removeCallbacks(mTimeoutProc);
             mCmdList.clear();
+        }
+
+        @Override
+        public void getDeviceIp(final String address) throws RemoteException {
+            myHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    sendCmd(GET_IP_PORT_CMD, address, "0");
+                }
+            });
+        }
+
+        @Override
+        public void connectP2P(final String imei, final String ip, final int port) throws RemoteException {
+            if (!mP2PSocketMap.containsKey(imei)) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        connectDevice(imei, ip, port);
+                    }
+                }).start();
+
+            }
         }
 
 

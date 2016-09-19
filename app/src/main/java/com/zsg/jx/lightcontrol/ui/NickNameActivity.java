@@ -17,6 +17,7 @@ import com.zsg.jx.lightcontrol.app.MyApplication;
 import com.zsg.jx.lightcontrol.bin.User;
 import com.zsg.jx.lightcontrol.dao.UserDao;
 import com.zsg.jx.lightcontrol.util.Config;
+import com.zsg.jx.lightcontrol.util.L;
 import com.zsg.jx.lightcontrol.util.PreferenceUtil;
 import com.zsg.jx.lightcontrol.util.UpdateUserInfo;
 import com.zsg.jx.lightcontrol.volley.RequestListener;
@@ -26,7 +27,7 @@ import org.json.JSONObject;
 
 
 public class NickNameActivity extends BaseActivity implements View.OnClickListener{
-    private static final String TAG ="NickNameActivity" ;
+    private static final String TAG ="testNickNameActivity" ;
     private boolean D=true;
     private ImageView btn_back;
     private TextView text_save;
@@ -77,7 +78,7 @@ public class NickNameActivity extends BaseActivity implements View.OnClickListen
                finish();
                 break;
             case R.id.text_save:
-                if(D) Log.d(TAG,"click nickname save");
+                L.i(TAG,"click nickname save");
                 String newNickname=text_nickname.getText().toString().trim();
                 if(newNickname.length()>16){
                     Toast.makeText(this, R.string.nickname_tolong,Toast.LENGTH_SHORT).show();
@@ -85,7 +86,7 @@ public class NickNameActivity extends BaseActivity implements View.OnClickListen
                     if(newNickname.equals(nickname)){
                         //不做任何的处理
                     }else {
-                        if(D) Log.d(TAG,newNickname);
+                        L.i(TAG,newNickname);
                         user.setName(newNickname);
                         showLoadingDialog();
                         UpdateUserInfo.UpdateUserInfo(user,requestListener(),NickNameActivity.this);

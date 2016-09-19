@@ -19,4 +19,11 @@ interface ICallback {
        void onGetBrightChromeRsp(String imei, int index, int bright, int chrome);
 
        void onPairLightRsp(String imei, int ret);
+
+       //得到设备ip回调
+       void onGetDeviceIpRsp(String imei,String ip,int port);
+
+       void onConnectP2P(String imei);
+
+       void onDisconnectP2P(String address);
 }

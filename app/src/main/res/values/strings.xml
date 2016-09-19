@@ -301,7 +301,7 @@
 
     <string name="nickinfo">好名字可以让你的朋友更容易记住你</string>
     <string name="savenicknamesuce">保存成功</string>
-    <string name="nickname_tolong">别名长度在16个字符以内</string>
+    <string name="nickname_tolong">名字长度应在16个字符以内</string>
 
     <!--性别-->
     <string name="man">男</string>
@@ -326,6 +326,7 @@
     <string name="identify_code">验证码:</string>
     <string name="next">下一步</string>
     <string name="get_code">获取验证码</string>
+    <string name="forget_pwd">忘记密码</string>
 
     <!--帮助反馈-->
     <string name="help_fadebanck">帮助反馈</string>

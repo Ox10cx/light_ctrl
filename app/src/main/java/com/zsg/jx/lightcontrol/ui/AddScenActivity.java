@@ -211,6 +211,8 @@ public class AddScenActivity extends Activity implements View.OnClickListener,
     public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
         return false;
     }
-
+    public void doBack(View v){
+        finish();
+    }
 
 }

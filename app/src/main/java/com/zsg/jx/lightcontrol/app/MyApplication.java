@@ -11,7 +11,9 @@ import com.zsg.jx.lightcontrol.util.L;
 import com.zsg.jx.lightcontrol.util.Net;
 import com.zsg.jx.lightcontrol.util.PreferenceUtil;
 
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 
 public class MyApplication extends Application {
 
@@ -25,6 +27,8 @@ public class MyApplication extends Application {
     public IService mService;
     //长连接 是否已经登录成功
     public boolean longConnected=false;
+
+    public Map<String, Boolean>  p2pConnectedMap=new HashMap<>();
 
 
     //工具类
