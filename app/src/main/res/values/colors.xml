@@ -41,4 +41,5 @@
     <color name="litt_black">#2E2E2E</color>
 
     <color name="item_line_color">#c8c7cc</color>
+    <color name="viewfinder_mask">#B2000000</color>
 </resources>

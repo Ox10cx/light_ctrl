@@ -347,19 +347,33 @@ public class PersonInfoActivity extends BaseActivity implements View.OnClickList
                     imagePath = path.get(0);
                     if (D)
                         Log.d(TAG, "get picture path" + path.get(0) + "get picture size" + path.get(0));
+                    //这是自己自定义的裁剪
+                    String savePath=FileUtils.createPath("photo");
+                    ClipImageActivity.prepare()
+                            .aspectX(2).aspectY(3)
+                            .inputPath(imagePath).outputPath(savePath)
+                            .startForResult(this,PHOTO_REQUEST_CUT);
 
-                    startPhotoZoom(
-                            Uri.fromFile(new File(imagePath)));
+                    //这是系统本身的裁剪(由于部分手机用系统裁剪会出现问题，所以采用自己自定义的)
+//                    startPhotoZoom(
+//                            Uri.fromFile(new File(imagePath)));
                     break;
                 case PHOTO_REQUEST_CUT:
                     if (D) Log.d(TAG, "pic cut result ");
-                    if (data != null) {
-                        //保存裁剪的路径
-                        setPicToView(data);
-                        sendRequestLoadImage();
-                    } else {
-                        Toast.makeText(getApplicationContext(), "照相失败", Toast.LENGTH_SHORT).show();
+                    if(data!=null) {
+                        //保存在本地
+                        String cutpath = ClipImageActivity.ClipOptions.createFromBundle(data).getOutputPath();
+                        if (cutpath != null) {
+                            sendRequestLoadImage();
+                        }
                     }
+//                    if (data != null) {
+//                        //保存裁剪的路径
+//                        setPicToView(data);
+//                        //sendRequestLoadImage();
+//                    } else {
+//                        Toast.makeText(getApplicationContext(), "照相失败", Toast.LENGTH_SHORT).show();
+//                    }
                     break;
             }
         }
@@ -413,7 +427,7 @@ public class PersonInfoActivity extends BaseActivity implements View.OnClickList
             Bitmap photo = extras.getParcelable("data");
             Log.d(TAG, "set View");
             //保存到本地的路径，上传时候使用
-            String urlPath = FileUtils.saveBitmap(photo, "photo");
+            //String urlPath = FileUtils.saveBitmap(photo, "photo");
             // Drawable drawable = new BitmapDrawable(null, photo);
             // image_head.setImageDrawable(drawable);
         }
@@ -432,7 +446,7 @@ public class PersonInfoActivity extends BaseActivity implements View.OnClickList
                 Map<String, String> params = new HashMap<String, String>();
                 params.put(Config.USER_ID, user.getId());
                 params.put(Config.IMAGE, Environment.getExternalStorageDirectory()
-                        + "/ble_anti_lost/photo.jpg");
+                        + "/light_ctrl/photo.jpg");
                 String str = "";
                 try {
                     str = RequestManager.postForm(Config.URL_UPLOADUSERIMAGE, params);

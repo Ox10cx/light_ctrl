@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.zsg.jx.lightcontrol"
-    android:versionName="@string/app_versionName">
+    package="com.zsg.jx.lightcontrol">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -24,9 +23,7 @@
         android:theme="@style/AppTheme">
         <activity android:name=".MainActivity" />
         <activity android:name=".ui.SplashActivity" />
-        <activity
-            android:name=".ui.HomeActivity"
-            android:screenOrientation="portrait" />
+        <activity android:name=".ui.HomeActivity" />
         <activity android:name=".ui.FirstActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -37,12 +34,8 @@
         <activity android:name=".ui.LoginActivity" />
         <activity android:name=".ui.RegisterActivity" />
         <activity android:name=".ui.DetailRegActivity" />
-        <activity
-            android:name=".ui.PersonInfoActivity"
-            android:screenOrientation="portrait" />
-        <activity
-            android:name=".ui.WifiConnectionActivity"
-            android:screenOrientation="portrait" />
+        <activity android:name=".ui.PersonInfoActivity" />
+        <activity android:name=".ui.WifiConnectionActivity" />
         <activity android:name=".ui.SpecialFunctionActivity" />
         <activity android:name=".ui.FunctionIntroduceActivity" />
         <activity android:name=".ui.HelpFadeCallbackActivity" />
@@ -57,26 +50,18 @@
             android:enabled="true"
             android:exported="true" />
 
-        <activity
-            android:name=".ui.ControlLightActivity"
-            android:screenOrientation="portrait" />
-        <activity
-            android:name=".ui.AddScenActivity"
-            android:screenOrientation="portrait" />
-        <activity
-            android:name=".ui.AddScenLightActivity"
-            android:screenOrientation="portrait" />
-        <activity
-            android:name=".ui.AddLightActivity"
-            android:screenOrientation="portrait" />
-        <activity
-            android:name=".ui.GateWayActivity"
-            android:screenOrientation="portrait" />
+        <activity android:name=".ui.ControlLightActivity" />
+        <activity android:name=".ui.AddScenActivity" />
+        <activity android:name=".ui.AddScenLightActivity" />
+        <activity android:name=".ui.AddLightActivity" />
+        <activity android:name=".ui.GateWayActivity" />
         <activity
             android:name=".ui.DeviceListActivity"
             android:theme="@style/Theme.AppCompat.Light.Dialog" />
-        <activity android:name=".ui.AddAreaActivity" />
-        <activity android:name=".ui.FindPasswordActivity"></activity>
+        <activity
+            android:name=".ui.ClipImageActivity"
+            android:screenOrientation="portrait"
+            android:theme="@android:style/Theme.Black.NoTitleBar" />
     </application>
 
 </manifest>

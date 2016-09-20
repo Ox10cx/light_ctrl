@@ -12,9 +12,9 @@ import java.io.IOException;
  * 邮箱：gongxi@uascent.com
  */
 public class FileUtils {
-    public static String SDPATH = Environment.getExternalStorageDirectory() + "/ble_anti_lost/";
-
-    public static String saveBitmap(Bitmap bm, String picName) {
+    public static String SDPATH = Environment.getExternalStorageDirectory() + "/light_ctrl/";
+    //保存裁剪的头像
+    public static String createPath(String picName) {
         String croppath = "";
         try {
             if (!isFileExist("")) {
@@ -26,10 +26,6 @@ public class FileUtils {
             if (f.exists()) {
                 f.delete();
             }
-            FileOutputStream out = new FileOutputStream(f);
-            bm.compress(Bitmap.CompressFormat.JPEG, 100, out);
-            out.flush();
-            out.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
