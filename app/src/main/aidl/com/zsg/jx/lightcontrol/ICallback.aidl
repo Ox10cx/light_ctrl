@@ -8,20 +8,20 @@ interface ICallback {
        boolean onRead(String address, in byte[] val);
        boolean onWrite(String address, out byte[] val);
        void onNotify(String imei, int type);
-       void onSwitchRsp(String imei, boolean ret);
+       void onSwitchRsp(String imei, boolean ret,int cmdnum);
        //得到灯泡开启关闭状态回调
-       void onGetStatusRsp(String imei, int ret);
-       void onCmdTimeout(String cmd, String imei);
+       void onGetStatusRsp(String imei, int ret,int cmdnum);
+       void onCmdTimeout(String cmd, String imei,int cmdnum);
        void onPingRsp(String imei, int ret);
         //得到灯泡是否在线离线状态回调
-       void onGetLightList(String imei, out byte[] list);
-       void onSetBrightChromeRsp(String imei, int ret);
-       void onGetBrightChromeRsp(String imei, int index, int bright, int chrome);
+       void onGetLightList(String imei, out byte[] list,int cmdnum);
+       void onSetBrightChromeRsp(String imei, int ret,int cmdnum);
+       void onGetBrightChromeRsp(String imei, int index, int bright, int chrome,int cmdnum);
 
-       void onPairLightRsp(String imei, int ret);
+       void onPairLightRsp(String imei, int ret,int cmdnum);
 
        //得到设备ip回调
-       void onGetDeviceIpRsp(String imei,String ip,int port);
+       void onGetDeviceIpRsp(String imei,String ip,int port,int cmdnum);
 
        void onConnectP2P(String imei);
 

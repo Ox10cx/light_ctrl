@@ -14,6 +14,7 @@ public class ServerMsg implements Serializable {
     String cmd;
     long datetime;
     String pack;
+    int cmd_num;
 
     public final static int MS_DEVICE_TIMEOUT = 12 * 1000;       // 12s 设备回应的超时时间
 
@@ -79,6 +80,13 @@ public class ServerMsg implements Serializable {
         this.cmd = cmd;
     }
 
+    public int getCmd_num() {
+        return cmd_num;
+    }
+
+    public void setCmd_num(int cmd_num) {
+        this.cmd_num = cmd_num;
+    }
 
 
     @Override

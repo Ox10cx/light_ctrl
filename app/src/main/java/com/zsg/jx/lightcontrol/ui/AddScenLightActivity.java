@@ -271,7 +271,7 @@ public class AddScenLightActivity extends BaseActivity implements View.OnClickLi
         }
 
         @Override
-        public void onSwitchRsp(String imei, final boolean ret) throws RemoteException {
+        public void onSwitchRsp(String imei, final boolean ret,int cmdNum) throws RemoteException {
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
@@ -282,12 +282,12 @@ public class AddScenLightActivity extends BaseActivity implements View.OnClickLi
         }
 
         @Override
-        public void onGetStatusRsp(String imei, final int ret) throws RemoteException {
+        public void onGetStatusRsp(String imei, final int ret,int cmdNum) throws RemoteException {
             Log.i(TAG, "onGetStatusRsp:" + ret);
         }
 
         @Override
-        public void onCmdTimeout(String cmd, String imei) throws RemoteException {
+        public void onCmdTimeout(String cmd, String imei,int cmdNum) throws RemoteException {
             Lg.i(TAG, "onCmdTimeout");
 
             if (cmd.equals(WifiConnectService.GET_BRIGHT_CHROME_CMD)) {
@@ -313,14 +313,14 @@ public class AddScenLightActivity extends BaseActivity implements View.OnClickLi
         }
 
         @Override
-        public void onGetLightList(String imei, final byte[] list) throws RemoteException {
+        public void onGetLightList(String imei, final byte[] list,int cmdNum) throws RemoteException {
             Log.i(TAG, "onGetLightList");
 
 
         }
 
         @Override
-        public void onSetBrightChromeRsp(String imei, final int ret) throws RemoteException {
+        public void onSetBrightChromeRsp(String imei, final int ret,int cmdNum) throws RemoteException {
             Lg.i(TAG, "onSetBrightChromeRsp->>" + "imei:" + imei + "   ret:" + ret);
             mHandler.post(new Runnable() {
                 @Override
@@ -344,7 +344,7 @@ public class AddScenLightActivity extends BaseActivity implements View.OnClickLi
         }
 
         @Override
-        public void onGetBrightChromeRsp(String imei, final int index, final int bright, final int chrome) throws RemoteException {
+        public void onGetBrightChromeRsp(String imei, final int index, final int bright, final int chrome,int cmdNum) throws RemoteException {
             //得到灯泡信息
             Log.i(TAG, "onGetBrightChromeRsp->>" + "index:" + index + "bright:" + bright + "chrome:" + chrome);
             mHandler.post(new Runnable() {
@@ -370,12 +370,12 @@ public class AddScenLightActivity extends BaseActivity implements View.OnClickLi
         }
 
         @Override
-        public void onPairLightRsp(final String imei, int ret) throws RemoteException {
+        public void onPairLightRsp(final String imei, int ret,int cmdNum) throws RemoteException {
 
         }
 
         @Override
-        public void onGetDeviceIpRsp(String imei, String ip,int port) throws RemoteException {
+        public void onGetDeviceIpRsp(String imei, String ip,int port,int cmdNum) throws RemoteException {
 
         }
 

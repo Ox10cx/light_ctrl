@@ -260,12 +260,12 @@ public class HomeActivity extends BaseActivity {
         }
 
         @Override
-        public void onSwitchRsp(String imei, boolean ret) throws RemoteException {
+        public void onSwitchRsp(String imei, boolean ret,int cmdnum) throws RemoteException {
 
         }
 
         @Override
-        public void onGetStatusRsp(String imei, int ret) throws RemoteException {
+        public void onGetStatusRsp(String imei, int ret,int cmdnum) throws RemoteException {
 
         }
 
@@ -276,8 +276,8 @@ public class HomeActivity extends BaseActivity {
          * @throws RemoteException
          */
         @Override
-        public void onCmdTimeout(String cmd, final String imei) throws RemoteException {
-            L.i(TAG, "onCmdTimeout");
+        public void onCmdTimeout(String cmd, final String imei,int cmdnum) throws RemoteException {
+            L.i(TAG, "onCmdTimeout cmdnum:"+cmdnum);
 
 
             if (cmd.equals(WifiConnectService.PAIR_LIGHT_CMD)) {
@@ -326,8 +326,8 @@ public class HomeActivity extends BaseActivity {
         }
 
         @Override
-        public void onGetLightList(final String imei, final byte[] list) throws RemoteException {
-            L.e(TAG, "onGetLightList:" + list + " " + imei);
+        public void onGetLightList(final String imei, final byte[] list,int cmdnum) throws RemoteException {
+            L.e(TAG, "onGetLightList:" + list + " " + imei+" "+cmdnum);
             requestCount = 0;
             mHandler.post(new Runnable() {
                               @Override
@@ -360,8 +360,8 @@ public class HomeActivity extends BaseActivity {
         }
 
         @Override
-        public void onSetBrightChromeRsp(String imei, int ret) throws RemoteException {
-            L.i(TAG, "onSetBrightChromeRsp");
+        public void onSetBrightChromeRsp(String imei, int ret,int cmdnum) throws RemoteException {
+            L.i(TAG, "onSetBrightChromeRsp cmdnum:"+cmdnum);
             if (getTopActivity().contains("HomeActivity")) {
                 mHandler.post(new Runnable() {
                     @Override
@@ -373,15 +373,15 @@ public class HomeActivity extends BaseActivity {
         }
 
         @Override
-        public void onGetBrightChromeRsp(String imei, int index, int bright, int chrome) throws
+        public void onGetBrightChromeRsp(String imei, int index, int bright, int chrome,int cmdnum) throws
                 RemoteException {
 
         }
 
         @Override
-        public void onPairLightRsp(final String imei, int ret) throws RemoteException {
+        public void onPairLightRsp(final String imei, int ret,int cmdnum) throws RemoteException {
             final int res = ret;
-            L.i(TAG, "onPairLightRsp:" + ret);
+            L.i(TAG, "onPairLightRsp:" + ret+"  cmdnum:"+cmdnum);
             mHandler.post(new Runnable() {
                               @Override
                               public void run() {
@@ -408,7 +408,8 @@ public class HomeActivity extends BaseActivity {
         }
 
         @Override
-        public void onGetDeviceIpRsp(String imei, String ip, int port) throws RemoteException {
+        public void onGetDeviceIpRsp(String imei, String ip, int port,int cmdnum) throws RemoteException {
+            L.i(TAG,"onGetDeviceIpRsp "+imei+" "+ip+" "+port+" "+cmdnum);
             //收到设备局域网地址 尝试进行连接
             //if (currentDevice.getAddress().equals(imei)) {
             MyApplication.getInstance().mService.connectP2P(imei, ip, port);
@@ -447,7 +448,7 @@ public class HomeActivity extends BaseActivity {
                     MyApplication.getInstance().mService != null) {
                 //获取wifi下的灯泡连接状态
                 try {
-                    MyApplication.getInstance().mService.getLightList(device.getAddress());
+                     MyApplication.getInstance().mService.getLightList(device.getAddress());
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
@@ -462,6 +463,7 @@ public class HomeActivity extends BaseActivity {
             if (MyApplication.getInstance().mService != null) {
                 MyApplication.getInstance().mService.connect(null);
                 MyApplication.getInstance().isFirstLongCon = true;
+
             } else {
                 showShortToast(getString(R.string.link_service_fail));
             }
@@ -732,8 +734,8 @@ public class HomeActivity extends BaseActivity {
                     } else {
                         showLongToast(getResources().getString(R.string.add_light_ok));
                         //更新列表
-                        MyApplication.getInstance().mService.getLightList(imei);
                     }
+                    MyApplication.getInstance().mService.getLightList(imei);
                 } catch (JSONException e) {
                     e.printStackTrace();
                 } catch (RemoteException e) {

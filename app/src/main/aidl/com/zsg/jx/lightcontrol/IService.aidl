@@ -39,4 +39,6 @@ interface IService {
     //点对点直接连接设备
     void connectP2P(String imei,String ip,int port);
 
+    int getNowCmdNum();
+
 }

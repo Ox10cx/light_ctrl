@@ -274,7 +274,7 @@ public class ControlLightActivity extends BaseActivity implements View.OnClickLi
         }
 
         @Override
-        public void onSwitchRsp(String imei, final boolean ret) throws RemoteException {
+        public void onSwitchRsp(String imei, final boolean ret,int cmdnum) throws RemoteException {
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
@@ -285,12 +285,12 @@ public class ControlLightActivity extends BaseActivity implements View.OnClickLi
         }
 
         @Override
-        public void onGetStatusRsp(String imei, final int ret) throws RemoteException {
+        public void onGetStatusRsp(String imei, final int ret,int cmdnum) throws RemoteException {
             Log.i(TAG, "onGetStatusRsp:" + ret);
         }
 
         @Override
-        public void onCmdTimeout(String cmd, String imei) throws RemoteException {
+        public void onCmdTimeout(String cmd, String imei,int cmdnum) throws RemoteException {
             Lg.i(TAG, "onCmdTimeout");
 
             //灯泡列表请求失败
@@ -348,8 +348,9 @@ public class ControlLightActivity extends BaseActivity implements View.OnClickLi
         }
 
         @Override
-        public void onGetLightList(String imei, final byte[] list) throws RemoteException {
-            L.i(TAG, "onGetLightList");
+        public void onGetLightList(String imei, final byte[] list,int cmdnum) throws RemoteException {
+            L.i(TAG, "onGetLightList cmdnum:"+cmdnum);
+            closeLoadingDialog();
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
@@ -360,6 +361,14 @@ public class ControlLightActivity extends BaseActivity implements View.OnClickLi
                             updateData(result);
                         }
                     } else {
+                        //讲所有灯泡状态改为离线
+                        for(int i=0;i<childList.size();i++){
+                            if(i==0)
+                                childList.get(i).get(0).setLightStatu((byte) 0);
+                            else
+                                childList.get(i).get(i).setLightStatu((byte) 2);
+                        }
+                        adapter.notifyDataSetChanged();
                         showShortToast(getString(R.string.device_link_no_light));
                     }
                 }
@@ -368,14 +377,27 @@ public class ControlLightActivity extends BaseActivity implements View.OnClickLi
         }
 
         @Override
-        public void onSetBrightChromeRsp(String imei, final int ret) throws RemoteException {
-            L.i(TAG, "onSetBrightChromeRsp->>" + "imei:" + imei + "   ret:" + ret);
+        public void onSetBrightChromeRsp(String imei, final int ret,int cmdnum) throws RemoteException {
+            L.i(TAG, "onSetBrightChromeRsp->>" + "imei:" + imei + "   ret:" + ret+"  cmdnum:"+cmdnum);
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
                     closeLoadingDialog();
                     if (ret == 0) {
                         showShortToast(getResources().getString(R.string.str_success));
+                    } else if (ret == 2) {
+                        showShortToast("该灯泡离线");
+                        for (int i = 0; i < adapter.getGroupCount(); i++) {
+                            //关闭所有分组
+                            expandableListView.collapseGroup(i);
+                        }
+                        showLoadingDialog(getString(R.string.data_loading));
+                        try {
+                            MyApplication.getInstance().mService.getLightList(device.getAddress());
+                        } catch (RemoteException e) {
+                            e.printStackTrace();
+                        }
+                        return;
                     } else {
                         showShortToast(getResources().getString(R.string.str_fail));
                     }
@@ -392,9 +414,9 @@ public class ControlLightActivity extends BaseActivity implements View.OnClickLi
         }
 
         @Override
-        public void onGetBrightChromeRsp(String imei, final int index, final int bright, final int chrome) throws RemoteException {
+        public void onGetBrightChromeRsp(String imei, final int index, final int bright, final int chrome,int cmdnum) throws RemoteException {
             //得到灯泡信息
-            L.i(TAG, "onGetBrightChromeRsp->>" + "index:" + index + "bright:" + bright + "chrome:" + chrome);
+            L.i(TAG, "onGetBrightChromeRsp->>" + "index:" + index + "bright:" + bright + "chrome:" + chrome+" cmdnum"+cmdnum);
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
@@ -406,7 +428,7 @@ public class ControlLightActivity extends BaseActivity implements View.OnClickLi
                             light.setLightness(bright + "");
                             light.setColor(chrome + "");
                             //展开对应子列表
-                            expandableListView.expandGroup(i,true);
+                            expandableListView.expandGroup(i, true);
                             break;
                         }
                     }
@@ -418,12 +440,12 @@ public class ControlLightActivity extends BaseActivity implements View.OnClickLi
         }
 
         @Override
-        public void onPairLightRsp(final String imei, int ret) throws RemoteException {
+        public void onPairLightRsp(final String imei, int ret,int cmdnum) throws RemoteException {
 
         }
 
         @Override
-        public void onGetDeviceIpRsp(String imei, String ip,int port) throws RemoteException {
+        public void onGetDeviceIpRsp(String imei, String ip, int port,int cmdnum) throws RemoteException {
 
         }
 
@@ -441,7 +463,7 @@ public class ControlLightActivity extends BaseActivity implements View.OnClickLi
 
     //更新灯泡数据
     private void updateData(String result) {
-        closeLoadingDialog();
+
         requestCount = 0;
         //isGetLightStatus = false;
         //isGetLightList = false;
@@ -584,13 +606,13 @@ public class ControlLightActivity extends BaseActivity implements View.OnClickLi
             if (Integer.parseInt(light_id) != 0) {
                 //改变一个灯泡
                 loadLight_id = Integer.parseInt(light_id);
-                MyApplication.getInstance().mService.setBrightChrome(device.getAddress(), loadLight_id, lightness, 255-chrome);
+                MyApplication.getInstance().mService.setBrightChrome(device.getAddress(), loadLight_id, lightness, 255 - chrome);
             } else {
                 //改变所有灯泡
                 for (Light light : lightData) {
                     if (light.getLightStatu() == 3)
                         MyApplication.getInstance().mService.setBrightChrome(device.getAddress()
-                                , Integer.parseInt(light.getId()), lightness, 255-chrome);
+                                , Integer.parseInt(light.getId()), lightness, 255 - chrome);
 
                 }
             }
@@ -623,7 +645,7 @@ public class ControlLightActivity extends BaseActivity implements View.OnClickLi
         }
     }
 
-    public void doBack(View v){
+    public void doBack(View v) {
         finish();
     }
 }

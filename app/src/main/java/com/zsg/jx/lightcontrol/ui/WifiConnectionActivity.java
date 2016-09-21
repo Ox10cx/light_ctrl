@@ -314,7 +314,7 @@ public class WifiConnectionActivity extends BaseActivity {
                     char[] buffer = Arrays.copyOf(tmpbuffer, len);
 //                    String macMessage = socket.getInetAddress().getHostAddress() + "/" + new String(buffer);
                     String macMessage = new String(buffer);
-                    Lg.i(TAG, "message->>>" + macMessage);
+                    L.i(TAG, "message->>>" + macMessage);
                     Message message = new Message();
                     message.what = CONFIGUREOK;
                     message.obj = macMessage;
@@ -592,13 +592,13 @@ public class WifiConnectionActivity extends BaseActivity {
      *
      * @param stableMac
      */
-    private void sendLinkWifiRequest(String stableMac) {
+    private void sendLinkWifiRequest(final String stableMac) {
         RequestParams params = new RequestParams();
         params.put(Config.IMEI, stableMac);
         RequestManager.post(Config.URL_LINKWIFIDEVICE, WifiConnectionActivity.this, params, new RequestListener() {
             @Override
             public void requestSuccess(String result) {
-                Lg.i(TAG, "HttpUtil.URL_LINKWIFIDEVICE->>>>>" + result);
+                L.i(TAG, "HttpUtil.URL_LINKWIFIDEVICE->>>>>" + result);
                 JSONObject json = null;
                 try {
                     json = new JSONObject(result);
@@ -617,6 +617,7 @@ public class WifiConnectionActivity extends BaseActivity {
                 Intent intent = new Intent();
                 Bundle b = new Bundle();
                 b.putInt("ret", ret);
+                b.putString("mac",stableMac);
                 intent.putExtras(b);
                 setResult(RESULT_OK, intent);
                 finish();

@@ -93,6 +93,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
 
     private ImageView refresh_view;
 
+    private String linkDeviceMac = "";        //上次关联的设备mac地址
+
 
     public HomeFragment(HomeActivity context) {
         this.context = context;
@@ -247,17 +249,31 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
             return;
         btnWgMsg.setText("网关 x " + mListDevice.size());
 
+        //判断是否是刚才关联的设备
+        if (tempDevice != null && tempDevice.getStatus() == WifiDevice.LOGIN_STATUS) {
+            if (tempDevice.getAddress().equals(linkDeviceMac)) {
+                L.i(TAG,"切换到刚才关联的网关");
+                currentDevice = tempDevice;
+                context.currentDevice = currentDevice;
+                if (currentDevice.getName().isEmpty()) {
+                    tvDeviceName.setText(getString(R.string.newwg1));
+                } else
+                    tvDeviceName.setText(currentDevice.getName());
+                requestHttpLightList();
+                linkDeviceMac="";
+                return;
+            }
 
-        //当前有可用网关时
+        }
+
         if (currentDevice != null && tempDevice != null) {
-
+            //当前有可用网关时
             if (tempDevice.getStatus() == WifiDevice.LOGIN_STATUS) {
                 if (tempDevice.getAddress().equals(currentDevice.getAddress())) {
-                    //当前设备还处于在线状态 则web请求列表
+                    //当前设备还处于在线状态 则web请求灯泡列表
                     currentDevice = tempDevice;
                     context.currentDevice = currentDevice;
                     requestHttpLightList();
-
                 }
                 return;
             } else {
@@ -266,10 +282,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
                 }
             }
 
-
         }
 
-        //当前无可用网关时
+        //当前网关不可用时
         currentDevice = null;
         for (int i = 0; i < mListDevice.size(); i++) {
             WifiDevice device = mListDevice.get(i);
@@ -287,7 +302,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
 
         lightIndex.clear();
         context.currentDevice = currentDevice;
-
 
         requestHttpLightList();
     }
@@ -370,6 +384,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
                 if (requestCode == LINK_DEVICE) {
                     Bundle b = data.getExtras();
                     int changed = b.getInt("ret", 0);
+                    linkDeviceMac = b.getString("mac");
                     // if (changed == 1) {
                     //通知主活动向web服务器请求更新设备列表
                     context.requestWifiList();

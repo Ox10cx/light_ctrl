@@ -87,6 +87,8 @@ public class WifiConnectService extends Service {
 
     Handler mHandler = new Handler();
 
+    public short cmdNum = 0;
+
     // 命令发送队列  发送命令收到该命令响应后即为发送成功
     // 发送成功或发送超时（一定时间服务端未响应）  则移除收个命令 发送下条命令
     //List<String> mCmdList = new LinkedList<String>();
@@ -125,7 +127,7 @@ public class WifiConnectService extends Service {
         Matcher m = p.matcher(s);
 
         if (m.find()) {
-            return new String[]{m.group(1), m.group(3)};
+            return new String[]{m.group(1), m.group(3), m.group(4)};
         }
 
         return null;
@@ -145,7 +147,7 @@ public class WifiConnectService extends Service {
             try {
                 int i;
                 for (i = 0; i < n; i++) {
-                    mCallbacks.getBroadcastItem(i).onCmdTimeout(cmd, imei);
+                    mCallbacks.getBroadcastItem(i).onCmdTimeout(cmd, imei,parseValuetoCmdnum(cmds[2]));
                 }
             } catch (RemoteException e) {
                 Log.e(TAG, "remote call exception", e);
@@ -155,6 +157,7 @@ public class WifiConnectService extends Service {
         }
     }
 
+    //将字符转换为对应的整数   "0"--0   "a"--10   "f"--15
     byte charToBin(char c) {
         byte v;
 
@@ -180,7 +183,8 @@ public class WifiConnectService extends Service {
     }
 
     /**
-     * 16进制的两字符转换为整型
+     * 16进制的两字符转换为  一个字节的  整型
+     * 把十六进制值的字符串转换为 ASCII 字符
      *
      * @param c1
      * @param c2
@@ -200,6 +204,8 @@ public class WifiConnectService extends Service {
 
         return v;
     }
+
+
 
 
     int hex2int(char c1, char c2) {
@@ -363,6 +369,7 @@ public class WifiConnectService extends Service {
             return null;
         }
         for (i = 0, j = 0; i < len; i += 2) {
+
             ret[j++] = hex2bin(s.charAt(i), s.charAt(i + 1)) & 0xff;
         }
 
@@ -370,7 +377,7 @@ public class WifiConnectService extends Service {
     }
 
     /**
-     * 解析16进制的字符串,长度为4
+     * 解析length长度16进制的字符串
      *
      * @param s 返回的16进制的字符串
      * @return
@@ -410,7 +417,7 @@ public class WifiConnectService extends Service {
 
     /**
      * 解析返回结果
-     * <p/>
+     * <p>
      * CLIENT + SEP(@) + CMD + SEP + TOKEN + SEP + IMEI +SEP + value + '$'
      *
      * @param s
@@ -479,7 +486,13 @@ public class WifiConnectService extends Service {
 
             if (SWITCH_RSP.equals(cmd)) {
                 L.e(TAG, "Get switch rsp here: token =" + token + ", imei = " + imei + ", ret = " + value);
+
                 doWithCmdList(SWITCH_CMD, imei);
+                int cmdNumtemp=0;
+                if(value.length()>4) {
+                    cmdNumtemp = parseValuetoCmdnum(value.substring(0, 4));
+                    value = value.substring(4);
+                }
                 synchronized (mCallbacks) {
                     int n = mCallbacks.beginBroadcast();
                     try {
@@ -493,7 +506,7 @@ public class WifiConnectService extends Service {
                         }
 
                         for (i = 0; i < n; i++) {
-                            mCallbacks.getBroadcastItem(i).onSwitchRsp(imei, ret);
+                            mCallbacks.getBroadcastItem(i).onSwitchRsp(imei, ret, cmdNumtemp);
                         }
                     } catch (RemoteException e) {
                         Log.e(TAG, "remote call exception", e);
@@ -527,6 +540,8 @@ public class WifiConnectService extends Service {
             if (GET_STATUS_RSP.equals(cmd)) {
                 L.e(TAG, "Get status rsp here: token =" + token + ", imei = " + imei + ", ret = " + value);
                 doWithCmdList(GET_STATUS_CMD, imei);
+                int cmdNumtemp = parseValuetoCmdnum(value.substring(0, 4));
+                value = value.substring(4);
                 synchronized (mCallbacks) {
                     int n = mCallbacks.beginBroadcast();
                     try {
@@ -534,7 +549,7 @@ public class WifiConnectService extends Service {
                         int ret = Integer.parseInt(value);
 
                         for (i = 0; i < n; i++) {
-                            mCallbacks.getBroadcastItem(i).onGetStatusRsp(imei, ret);
+                            mCallbacks.getBroadcastItem(i).onGetStatusRsp(imei, ret, cmdNumtemp);
                         }
                     } catch (RemoteException e) {
                         Log.e(TAG, "remote call exception", e);
@@ -546,6 +561,11 @@ public class WifiConnectService extends Service {
             if (GET_LIGHT_LIST_RSP.equals(cmd)) {
                 L.e(TAG, "Get light list rsp here: token =" + token + ", imei = " + imei + ", ret = " + value);
                 doWithCmdList(GET_LIGHT_LIST_CMD, imei);
+                int cmdNumtemp=0;
+           /*     if(value.length()>4) {
+                    cmdNumtemp = parseValuetoCmdnum(value.substring(0, 4));
+                    value = value.substring(4);
+                }*/
 //                int[] lightArray = getLightIntArray(value);
                 byte[] lightArray = getLightByteArrayPro(value);
                 synchronized (mCallbacks) {
@@ -555,7 +575,7 @@ public class WifiConnectService extends Service {
                         int i;
 
                         for (i = 0; i < n; i++) {
-                            mCallbacks.getBroadcastItem(i).onGetLightList(imei, lightArray);
+                            mCallbacks.getBroadcastItem(i).onGetLightList(imei, lightArray, cmdNumtemp);
                         }
                     } catch (RemoteException e) {
                         Log.e(TAG, "remote call exception", e);
@@ -568,6 +588,11 @@ public class WifiConnectService extends Service {
                 //得到
                 L.e(TAG, "Get bright and chrome rsp here: token =" + token + ", imei = " + imei + ", ret = " + value);
                 doWithCmdList(GET_BRIGHT_CHROME_CMD, imei);
+                int cmdNumtemp=0;
+          /*      if(value.length()>4) {
+                    cmdNumtemp = parseValuetoCmdnum(value.substring(0, 4));
+                    value = value.substring(4);
+                }*/
                 int[] retArray = getRetValue(value);
                 synchronized (mCallbacks) {
                     int n = mCallbacks.beginBroadcast();
@@ -575,7 +600,7 @@ public class WifiConnectService extends Service {
                         int i;
                         Lg.i("hjq", "n->>>" + n);
                         for (i = 0; i < n; i++) {
-                            mCallbacks.getBroadcastItem(i).onGetBrightChromeRsp(imei, retArray[0], retArray[1], retArray[2]);
+                            mCallbacks.getBroadcastItem(i).onGetBrightChromeRsp(imei, retArray[0], retArray[1], retArray[2], cmdNumtemp);
                         }
                     } catch (RemoteException e) {
                         Log.e(TAG, "remote call exception", e);
@@ -587,6 +612,11 @@ public class WifiConnectService extends Service {
             if (SET_BRIGHT_CHROME_RSP.equals(cmd)) {
                 L.e(TAG, "Set bright and chrome rsp here: token =" + token + ", imei = " + imei + ", ret = " + value);
                 doWithCmdList(SET_BRIGHT_CHROME_CMD, imei);
+                int cmdNumtemp=0;
+                if(value.length()>4) {
+                    cmdNumtemp = parseValuetoCmdnum(value.substring(0, 4));
+                    value = value.substring(4);
+                }
                 synchronized (mCallbacks) {
                     int n = mCallbacks.beginBroadcast();
                     L.e(TAG, "n->>>" + n);
@@ -594,7 +624,7 @@ public class WifiConnectService extends Service {
                         int i;
 
                         for (i = 0; i < n; i++) {
-                            mCallbacks.getBroadcastItem(i).onSetBrightChromeRsp(imei, getRetValueByLength(value, 4));
+                            mCallbacks.getBroadcastItem(i).onSetBrightChromeRsp(imei, getRetValueByLength(value, 4), cmdNumtemp);
                         }
                     } catch (RemoteException e) {
                         Log.e(TAG, "remote call exception", e);
@@ -606,13 +636,18 @@ public class WifiConnectService extends Service {
             if (PAIR_LIGHT_RSP.equals(cmd)) {
                 L.i(TAG, "pair light device rsp here: token =" + token + ", imei = " + imei + ", ret = " + value);
                 doWithCmdList(PAIR_LIGHT_CMD, imei);
+                int cmdNumtemp=0;
+                if(value.length()>4) {
+                    cmdNumtemp = parseValuetoCmdnum(value.substring(0, 4));
+                    value = value.substring(4);
+                }
                 synchronized (mCallbacks) {
                     int n = mCallbacks.beginBroadcast();
                     try {
                         int i;
 
                         for (i = 0; i < n; i++) {
-                            mCallbacks.getBroadcastItem(i).onPairLightRsp(imei, getRetValueByLength(value, 2));
+                            mCallbacks.getBroadcastItem(i).onPairLightRsp(imei, getRetValueByLength(value, 2), cmdNumtemp);
                         }
                     } catch (RemoteException e) {
                         Log.e(TAG, "remote call exception", e);
@@ -624,6 +659,13 @@ public class WifiConnectService extends Service {
             if (GET_IP_PORT_RSP.equals(cmd)) {
                 L.i(TAG, "get ip:port rsp here: token =" + token + ", imei = " + imei + ", ret = " + value);
                 doWithCmdList(GET_IP_PORT_CMD, imei);
+
+                int cmdNumtemp=0;
+                if(value.length()>4) {
+                    cmdNumtemp = parseValuetoCmdnum(value.substring(0, 4));
+                    value = value.substring(4);
+                }
+
                 String ip = parseValuetoIp(value);
                 int port = parseValuetoPort(value);
                 synchronized (mCallbacks) {
@@ -631,7 +673,7 @@ public class WifiConnectService extends Service {
                     try {
                         int i;
                         for (i = 0; i < n; i++) {
-                            mCallbacks.getBroadcastItem(i).onGetDeviceIpRsp(imei, ip, port);
+                            mCallbacks.getBroadcastItem(i).onGetDeviceIpRsp(imei, ip, port, cmdNumtemp);
                         }
                     } catch (RemoteException e) {
                         Log.e(TAG, "remote call exception", e);
@@ -641,6 +683,14 @@ public class WifiConnectService extends Service {
             }
 
         }
+    }
+
+    private int parseValuetoCmdnum(String value) {
+        value=value.toLowerCase();      //转为小写
+        int a=hex2int(value.charAt(0),value.charAt(1));
+        int b=hex2int(value.charAt(2),value.charAt(3));
+        int num=a*16*16+b;
+        return num;
     }
 
     private int parseValuetoPort(String value) {
@@ -859,19 +909,12 @@ public class WifiConnectService extends Service {
         }
     };*/
 
-    protected boolean doSend(String pack,Socket socket) {
-        if (socket == null) {
-            L.e(TAG, "no socket for server");
-            return false;
-        }
+    protected boolean doSend(String pack, Socket socket) {
+
 
         L.e(TAG, "cmd string = " + pack);
         OutputStream os = null;
-        ServerMsg msg = new ServerMsg(pack);
-        mCmdList.add(msg);
 
-        //mHandler.postDelayed(mTimeoutProc, mInterval * 1000);
-        startPollTimer();
         try {
             os = socket.getOutputStream();
             byte[] strbyte = pack.getBytes("UTF-8");
@@ -930,7 +973,7 @@ public class WifiConnectService extends Service {
             try {
                 int i;
                 for (i = 0; i < n; i++) {
-                    mCallbacks.getBroadcastItem(i).onCmdTimeout(array[0], array[1]);
+                    mCallbacks.getBroadcastItem(i).onCmdTimeout(array[0], array[1], parseValuetoCmdnum(array[2]));
                 }
             } catch (RemoteException e) {
                 Log.e(TAG, "remote call exception", e);
@@ -960,7 +1003,11 @@ public class WifiConnectService extends Service {
         sb.append(END);
         pack = sb.toString();
 
-        return doSend(pack,mSocketMap.get(IMEI));
+        if (mSocketMap.get(IMEI) == null) {
+            L.e(TAG, "no socket for server");
+            return false;
+        }
+        return doSend(pack, mSocketMap.get(IMEI));
     }
 
     /**
@@ -991,12 +1038,23 @@ public class WifiConnectService extends Service {
         }
         sb.append(END);
         pack = sb.toString();
-        Socket socket=null;
-        if(mP2PSocketMap.containsKey(imei))
-            socket=mP2PSocketMap.get(imei);
+        Socket socket = null;
+        if (mP2PSocketMap.containsKey(imei))
+            socket = mP2PSocketMap.get(imei);
         else
-            socket=mSocketMap.get(IMEI);
-        return doSend(pack,socket);
+            socket = mSocketMap.get(IMEI);
+
+        if (socket == null) {
+            L.e(TAG, "no socket for server");
+            return false;
+        }
+
+        ServerMsg msg = new ServerMsg(pack);
+        msg.setCmd_num(cmdNum);
+        mCmdList.add(msg);
+        startPollTimer();
+
+        return doSend(pack, socket);
     }
 
     @Override
@@ -1023,6 +1081,7 @@ public class WifiConnectService extends Service {
         return super.onUnbind(intent);
     }
 
+    //将一个字节转换为16进制字符串形式
     String bin2hex(byte v) {
         StringBuffer sb = new StringBuffer();
         char[] array = "0123456789ABCDEF".toCharArray();
@@ -1085,10 +1144,12 @@ public class WifiConnectService extends Service {
          */
         @Override
         public void enableLight(final String addr, final boolean on) throws RemoteException {
+            final String s = getCmdNum();
             myHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    sendCmd(SWITCH_CMD, addr, on ? ON : OFF);
+
+                    sendCmd(SWITCH_CMD, addr, s + (on ? ON : OFF));
                 }
             });
         }
@@ -1096,10 +1157,11 @@ public class WifiConnectService extends Service {
         @Override
         public void getLightStatus(final String addr) throws RemoteException {
             L.e(TAG, "getLightStatus");
+            final String s = getCmdNum();
             myHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    sendCmd(GET_STATUS_CMD, addr, "0");
+                    sendCmd(GET_STATUS_CMD, addr, s);
                 }
             });
         }
@@ -1107,10 +1169,11 @@ public class WifiConnectService extends Service {
         @Override
         public void ping(final String addr, final int val) throws RemoteException {
             L.i(TAG, "ping");
+            final String s = getCmdNum();
             myHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    sendCmd(PING_CMD, addr, Integer.toString(val));
+                    sendCmd(PING_CMD, addr, s + Integer.toString(val));
                 }
             });
         }
@@ -1118,10 +1181,12 @@ public class WifiConnectService extends Service {
         @Override
         public void getLightList(final String address) throws RemoteException {
             L.e(TAG, "getLightList");
+
+            final String s = getCmdNum();
             myHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    sendCmd(GET_LIGHT_LIST_CMD, address, "0");
+                    sendCmd(GET_LIGHT_LIST_CMD, address, s);
                 }
             });
         }
@@ -1138,6 +1203,7 @@ public class WifiConnectService extends Service {
             }
 
             StringBuffer sb = new StringBuffer();
+            sb.append(getCmdNum());
             sb.append(bin2hex((byte) index));
             sb.append(bin2hex((byte) bright));
             sb.append(bin2hex((byte) chrome));
@@ -1165,6 +1231,7 @@ public class WifiConnectService extends Service {
             }
             L.i(TAG, "getBrightChrome");
             StringBuffer sb = new StringBuffer();
+            sb.append(getCmdNum());
             sb.append(bin2hex((byte) index));
             final String s = sb.toString();
 
@@ -1183,6 +1250,7 @@ public class WifiConnectService extends Service {
                 return;
             }
             StringBuffer sb = new StringBuffer();
+            sb.append(getCmdNum());
             sb.append(bin2hex((byte) index));
             final String s = sb.toString();
 
@@ -1203,10 +1271,11 @@ public class WifiConnectService extends Service {
 
         @Override
         public void getDeviceIp(final String address) throws RemoteException {
+            final String s = getCmdNum();
             myHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    sendCmd(GET_IP_PORT_CMD, address, "0");
+                    sendCmd(GET_IP_PORT_CMD, address, s);
                 }
             });
         }
@@ -1224,6 +1293,11 @@ public class WifiConnectService extends Service {
             }
         }
 
+        @Override
+        public int getNowCmdNum() throws RemoteException {
+            return cmdNum;
+        }
+
 
         public void unregisterCallback(ICallback cb) {
             if (cb != null) {
@@ -1237,6 +1311,14 @@ public class WifiConnectService extends Service {
             }
         }
     };
+
+    private String getCmdNum() {
+        cmdNum = (short) (cmdNum + 1);
+        StringBuffer sb = new StringBuffer();
+        sb.append(bin2hex((byte) ((cmdNum >> 8) & 0xff)));
+        sb.append(bin2hex((byte) (cmdNum & 0xff)));
+        return sb.toString();
+    }
 
 
 }
