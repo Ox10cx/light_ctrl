@@ -20,6 +20,8 @@ interface ICallback {
 
        void onPairLightRsp(String imei, int ret,int cmdnum);
 
+       void onRemoveLightRsp(String imei,int ret,int cmdnum);
+
        //得到设备ip回调
        void onGetDeviceIpRsp(String imei,String ip,int port,int cmdnum);
 

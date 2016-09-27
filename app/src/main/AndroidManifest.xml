@@ -62,6 +62,7 @@
             android:name=".ui.ClipImageActivity"
             android:screenOrientation="portrait"
             android:theme="@android:style/Theme.Black.NoTitleBar" />
+        <activity android:name=".ui.DeleteLightActivity"></activity>
     </application>
 
 </manifest>
